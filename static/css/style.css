@@ -40,7 +40,7 @@
     --ff-mono:  'JetBrains Mono', monospace;
 }
 
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; overflow: hidden; -webkit-overflow-scrolling: touch; }
 
 body {
     background: var(--bg);
@@ -78,7 +78,7 @@ body {
 }
 
 /* ── APP SHELL ────────────────────────────── */
-.app { display:flex; height:100vh; height:100dvh; overflow:hidden; position:relative; z-index:1; }
+.app { display:flex; height:100vh; height:100dvh; overflow:hidden; position:relative; z-index:1; -webkit-overflow-scrolling: touch; }
 
 /* ── SIDEBAR OVERLAY ──────────────────────── */
 .sidebar-overlay {
