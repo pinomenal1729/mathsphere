@@ -231,8 +231,8 @@ async function sendPanel(mode) {
     const winIdCandidates = [
         `${mode}Window`,
         `${mode}sWindow`,
-        // for compound names like concept_map
-        mode.replace('_', '') + 'Window'
+        mode.replace('_', '') + 'Window',
+        mode.replace('_', 'Window')
     ];
     let win = null;
     for (const id of winIdCandidates) {
@@ -881,13 +881,24 @@ function renderPYQTopics() {
 }
 
 function askPYQ(exam, topic, year) {
-    const examNames = { gate: 'GATE Mathematics (MA)', csirnet: 'CSIR NET Mathematical Sciences', iitjam: 'IIT JAM Mathematics' };
+    const examNames = { 
+        gate: 'GATE Mathematics (MA)', 
+        csirnet: 'CSIR NET Mathematical Sciences', 
+        iitjam: 'IIT JAM Mathematics' 
+    };
     const msg = `Give me ${year === 'recent' ? 'recent' : year} previous year questions from ${examNames[exam]} on the topic: ${topic}. Include complete solutions.`;
+    
     const inp = document.getElementById('pyqInput');
-    if (inp) { inp.value = msg; autoResize(inp); }
+    if (inp) { 
+        inp.value = msg; 
+        autoResize(inp); 
+    }
+    
     const welcome = document.getElementById('pyqWelcome');
     if (welcome) welcome.style.display = 'none';
-    sendPanel('pyq');
+    
+    // Small delay so input value is set before sendPanel reads it
+    setTimeout(() => sendPanel('pyq'), 50);
 }
 
 // Init exam hub and PYQ on page load

@@ -1008,6 +1008,7 @@ textarea::placeholder { color: var(--text3); font-size: 13px; }
 
 /* ── MOBILE: ≤600px  full screen, no rail, compact UI ──────── */
 @media (max-width: 768px) {
+    .video-rail { display: none !important; }
     .sidebar { width: 80vw; max-width: 280px; }
     .shell { width: 100%; }
     .header-tab-label { display: none; }

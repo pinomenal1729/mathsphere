@@ -544,7 +544,9 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
     creative_modes = ["intuition", "storytelling", "socratic", "daily_puzzle", "visual_proof", "career", "concept_map", "pyq"]
     
     if mode in creative_modes:
-        for model_name, label in HARD_MODEL_CASCADE:
+    # PYQ needs highest accuracy model
+        cascade = HARD_MODEL_CASCADE if mode == "pyq" else [("gemini-2.0-flash", "Gemini 2.0 Flash")]
+        for model_name, label in cascade:
             try:
                 print(f"[Creative:{mode}] Trying {model_name}...")
                 text = ask_gemini_model(message, sys_prompt, model_name, chat_history=chat_history)
