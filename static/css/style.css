@@ -1007,55 +1007,19 @@ textarea::placeholder { color: var(--text3); font-size: 13px; }
 }
 
 /* ── MOBILE: ≤600px  full screen, no rail, compact UI ──────── */
-@media (max-width: 600px) {
-    .app { flex-direction: column; }
-    .sidebar {
-        position: fixed; top: 0; left: 0;
-        transform: translateX(-100%);
-        width: 82vw; max-width: 290px;
-        z-index: 200; height: 100dvh;
-    }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar-overlay { display: block; }
-    .hamburger { display: flex; }
-    .shell { flex: 1; min-width: 0; width: 100%; }
-    .video-rail { display: none; }
-
-    /* Header */
-    .header { padding: 0 12px; }
-    .header-tagline { font-size: 8px; letter-spacing: 1px; }
-    .logo-text { font-size: 15px; }
+@media (max-width: 768px) {
+    .sidebar { width: 80vw; max-width: 280px; }
+    .shell { width: 100%; }
     .header-tab-label { display: none; }
-    .header-actions { gap: 6px; }
-
-    /* Chat */
-    .chat-window, .panel-chat { padding: 14px 14px; }
-    .input-area { padding: 8px 12px 10px; }
-    .message.bot  { max-width: 98%; }
-    .message.user { max-width: 92%; }
-
-    /* Welcome screen */
-    .welcome-title  { font-size: 26px; }
+    .logo-text { font-size: 15px; }
+    .header-tagline { font-size: 8px; letter-spacing: 1px; }
+    .welcome-title { font-size: 26px; }
     .welcome-symbol { font-size: 44px; }
-    .feature-showcase { grid-template-columns: 1fr; }
-    .fo-grid { grid-template-columns: repeat(2, 1fr); }
-
-    /* About */
-    .about-cards { grid-template-columns: 1fr; }
-    .social-btn  { padding: 7px 12px; font-size: 11px; }
-
-    /* Sidebar */
-    .sidebar-name { font-size: 14px; }
-    .sidebar-role { font-size: 10px; }
-    .snav-btn     { font-size: 12px; padding: 9px 14px; }
-
-    /* Exam hub / PYQ */
-    .exam-pattern-grid { grid-template-columns: repeat(2, 1fr); }
-    .pyq-quick { flex-wrap: wrap; }
-
-    /* Question cards */
-    .qc-card { border-radius: 12px; }
-    .qc-actions { flex-wrap: wrap; }
+    .message.user { max-width: 92%; }
+    .message.bot  { max-width: 98%; }
+    .about-cards  { grid-template-columns: 1fr; }
+    .social-btn   { padding: 7px 12px; font-size: 11px; }
+    .math-sym { display: none; }
 }
 
 
