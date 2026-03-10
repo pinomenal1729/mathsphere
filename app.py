@@ -44,15 +44,17 @@ OUTPUT FORMAT RULES:
 # ── STRUCTURED RICH FORMAT RULES (for non-math modes) ──────────
 RICH_FORMAT_RULES = """
 STRUCTURED OUTPUT RULES — FOLLOW EXACTLY:
+- CRITICAL: Put a BLANK LINE (empty line) before AND after EVERY section header.
+- CRITICAL: Each numbered list item (1. 2. 3.) must be on its OWN LINE with a blank line before the list.
+- CRITICAL: Each bullet point (- item) must be on its OWN LINE.
 - Use ALL-CAPS headers followed by colon for every section: SECTION NAME: content
-- Use numbered lists (1. 2. 3.) for steps, roadmaps, and sequences
-- Use bullet points (- item) for lists of items within a section
+- Use numbered lists (1. 2. 3.) for steps, roadmaps, and sequences — ONE ITEM PER LINE
+- Use bullet points (- item) for lists — ONE ITEM PER LINE
 - Wrap important concepts in ALL-CAPS: e.g. FOURIER TRANSFORM, KEY INSIGHT
-- For every resource/link, use the exact format: RESOURCE: https://full-url-here
-- For flowcharts, use numbered steps with → arrows between them
-- For year plans, use: YEAR 1: content  YEAR 2: content  etc.
+- For every resource/link: RESOURCE: https://full-url-here (on its own line)
+- For year plans: each on its own line: YEAR 1: [content]
 - Never use markdown: no **, *, #, __ symbols
-- Each major section must be on its own line with a blank line before it
+- Each major section must be on its own line with a blank line before AND after it
 - Keep each bullet point to 1-2 sentences maximum
 - Use $...$ for inline math and $$...$$ for standalone equations
 """

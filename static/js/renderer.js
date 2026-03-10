@@ -297,6 +297,13 @@ function renderMathContent(raw) {
         return s;
     }
 
+    // ── Step 3: Pre-process — normalise so every section header gets its own paragraph ──
+    // AI often returns sections separated by single \n — force double \n before ALL-CAPS headers
+    text = text
+        .replace(/([^\n])\n([A-Z][A-Z0-9 \/\'\-·—]{2,70}:)/g, '$1\n\n$2')
+        .replace(/([^\n])\n(\d+[.)] )/g, '$1\n\n$2')
+        .replace(/([^\n])\n([-•·▸] )/g, '$1\n\n$2');
+
     // ── Step 3: Split into paragraphs ─────────────────────────
     var rawParas = text.split(/\n{2,}/);
 
@@ -346,7 +353,7 @@ function renderMathContent(raw) {
         }
 
         // ── ALL-CAPS header only (no content) ─────────────────
-        var headerOnlyMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·]{2,70}):\s*$/);
+        var headerOnlyMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·—]{2,80}):\s*$/);
         if (headerOnlyMatch) {
             var labelH = headerOnlyMatch[1].trim();
             if (/^YEAR\s+(\d+\+?)/i.test(labelH)) {
@@ -366,7 +373,7 @@ function renderMathContent(raw) {
         }
 
         // ── ALL-CAPS header + content on same line ─────────────
-        var inlineHeaderMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·]{2,60}):\s+(.+)$/s);
+        var inlineHeaderMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·—]{2,70}):\s+([\s\S]+)$/);
         if (inlineHeaderMatch && para.indexOf('\n') === -1) {
             var labelI   = inlineHeaderMatch[1].trim();
             var contentI = inlineHeaderMatch[2].trim();
