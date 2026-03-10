@@ -346,6 +346,7 @@ body {
 }
 .chip:hover         { border-color: var(--teal);   color: var(--teal);   background: var(--teal-g); }
 .chip-rose:hover    { border-color: var(--rose);   color: var(--rose);   background: var(--rose-g); }
+.chip-amber { border-color: var(--amber); color: var(--amber); }
 .chip-purple:hover  { border-color: var(--purple); color: var(--purple2); background: var(--purple-g); }
 .chip-teal:hover    { border-color: var(--teal);   color: var(--teal2);  background: var(--teal-g); }
 
@@ -584,6 +585,8 @@ ol.math-steps li::before {
     flex-shrink: 0; padding-bottom: 2px; display: flex; align-items: center;
 }
 .attach-btn:hover { color: var(--teal); }
+.attach-btn--hand { color: var(--text3); }
+.attach-btn--hand:hover { color: var(--amber); }
 
 textarea {
     flex: 1; background: transparent; border: none; outline: none;

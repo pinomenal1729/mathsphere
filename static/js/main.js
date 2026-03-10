@@ -112,6 +112,51 @@ function removeImage() {
     if (imageUpload) imageUpload.value = '';
 }
 
+// ── HANDWRITTEN MATH UPLOAD ────────────────────────────────────
+function handleHandwrittenUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.indexOf(file.type) === -1) {
+        alert('Please upload a valid image file (JPG, PNG, GIF, WEBP)');
+        event.target.value = '';
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Image too large. Please upload an image smaller than 10MB.');
+        event.target.value = '';
+        return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var dataUrl = e.target.result;
+        uploadedImage = {
+            data:      dataUrl.split(',')[1],
+            mime_type: file.type,
+            preview:   dataUrl,
+            isHandwritten: true
+        };
+        var preview    = document.getElementById('previewImg');
+        var previewBox = document.getElementById('imagePreview');
+        if (preview)    preview.src = dataUrl;
+        if (previewBox) {
+            previewBox.classList.remove('hidden');
+            previewBox.querySelector('.preview-label').textContent = '✎ Handwritten math attached';
+        }
+        // Pre-fill the input with a helpful prompt
+        var inp = document.getElementById('userInput');
+        if (inp && !inp.value.trim()) {
+            inp.value = 'Solve this handwritten problem step by step';
+            autoResize(inp);
+        }
+    };
+    reader.onerror = function() {
+        alert('Failed to read image. Please try again.');
+        event.target.value = '';
+    };
+    reader.readAsDataURL(file);
+}
+
 // ── BADGE ──────────────────────────────────────────────────────
 function setBadge(text, color) {
     var b = document.getElementById('apiBadge');
