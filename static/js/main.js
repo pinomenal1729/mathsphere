@@ -13,7 +13,7 @@
 // ── STATE ──────────────────────────────────────────────────────
 var uploadedImage = null;
 var history = {
-    math:[], projects:[], mathematician:[], applications:[], graph_analysis:[],
+    math:[], projects:[], mathematician:[], legends:[], applications:[], graph_analysis:[],
     intuition:[], storytelling:[], socratic:[], concept_map:[],
     daily_puzzle:[], visual_proof:[], career:[], pyq:[]
 };
@@ -355,14 +355,15 @@ async function sendPanel(mode) {
     var prompts = {
         projects:     'Give me 5 detailed mathematics project ideas related to: ' + message,
         mathematician:'Tell me everything about the mathematician: ' + message,
-        applications: 'Give me 12 detailed real-world applications of: ' + message,
-        intuition:    'Build my intuition for this mathematical concept: ' + message,
-        storytelling: 'Tell me the complete mathematical story of: ' + message,
-        socratic:     'Help me think through this using the Socratic method: ' + message,
-        concept_map:  'Generate a complete concept map for: ' + message,
+        legends:      'Tell me the full story of the mathematical legend: ' + message,
+        applications: 'Give me the 5 most important real-world applications of: ' + message,
+        intuition:    'Build my mathematical intuition for this concept using story, analogy, visual thinking and flowchart: ' + message,
+        storytelling: 'Tell me the complete mathematical story of this topic with visual flowchart and structure: ' + message,
+        socratic:     'Help me think through this using the Socratic method with visual hints: ' + message,
+        concept_map:  'Generate a complete concept map with visual learning flowchart for: ' + message,
         daily_puzzle: message,
-        visual_proof: 'Explain the visual proof of: ' + message,
-        career:       'Give me a complete career pathway guide for someone interested in: ' + message,
+        visual_proof: 'Explain the visual proof step by step of: ' + message,
+        career:       'Give me a complete career pathway guide with roadmap and resources for someone interested in: ' + message,
         pyq:          message
     };
 

@@ -102,6 +102,23 @@ const SECTION_ICONS = {
     'FIELD'                         : { icon: '🏷️', color: 'purple' },
     'HOW IT WORKS'                  : { icon: '⚙️', color: 'teal'   },
     'EXAMPLE'                       : { icon: '💡', color: 'amber'  },
+    'WHY IT MATTERS'                : { icon: '🌟', color: 'rose'   },
+    'THE LEGEND IN ONE LINE'        : { icon: '⭐', color: 'amber'  },
+    'THE PROBLEM THAT DEFINED THEM' : { icon: '❓', color: 'rose'   },
+    'MATHEMATICAL LEGACY'           : { icon: '🏛️', color: 'purple' },
+    'LEARN MORE'                    : { icon: '📚', color: 'teal'   },
+    'INTERACTIVE RESOURCE'          : { icon: '🎮', color: 'teal'   },
+    'EXPLORE FURTHER'               : { icon: '🔭', color: 'purple' },
+    'KEY RESOURCE'                  : { icon: '📚', color: 'teal'   },
+    'VISUAL FLOWCHART'              : { icon: '🗺️', color: 'amber'  },
+    'VISUAL HINT'                   : { icon: '👁️', color: 'teal'   },
+    'KEY CONCEPT'                   : { icon: '💎', color: 'amber'  },
+    'VISUAL INSIGHT'                : { icon: '🖼️', color: 'purple' },
+    'CAREER NAME'                   : { icon: '💼', color: 'amber'  },
+    'TOP 5 CAREER PATHS'            : { icon: '🚀', color: 'teal'   },
+    'HOW IT CHANGED THE WORLD'      : { icon: '🌍', color: 'teal'   },
+    'FREE RESOURCES TO START TODAY' : { icon: '📚', color: 'teal'   },
+    'WHY IT MATTERS'                : { icon: '🌟', color: 'rose'   },
 };
 
 const YEAR_COLORS = ['teal', 'amber', 'rose', 'purple'];
@@ -119,10 +136,12 @@ function linkify(text) {
     return String(text).replace(
         /(https?:\/\/[^\s<>"&]+)/g,
         function(url) {
-            var clean = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            var clean = url.replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
+            // Truncate very long URLs for display
+            var display = clean.length > 60 ? clean.substring(0, 57) + '...' : clean;
             return '<a href="' + url +
                 '" target="_blank" rel="noopener" class="vr-resource-link">' +
-                '<span>🔗</span> ' + clean + '</a>';
+                '<span>🔗</span> ' + display + '</a>';
         }
     );
 }
@@ -358,7 +377,7 @@ function renderMathContent(raw) {
                 continue;
             }
 
-            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES', 'MATHEMATICS USED', 'TOOLS'];
+            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES', 'MATHEMATICS USED', 'TOOLS', 'WHY IT MATTERS'];
             if (careerFields.indexOf(labelI) !== -1) {
                 if (!careerBuffer) careerBuffer = {};
                 careerBuffer[labelI] = restoreInline(contentI);
