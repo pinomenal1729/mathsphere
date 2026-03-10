@@ -9,9 +9,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script>
     MathJax = {
-        tex: { inlineMath:[['$','$'],['\\(','\\)']], displayMath:[['$$','$$'],['\\[','\\]']], processEscapes:true, processEnvironments:true },
-        options: { skipHtmlTags:['script','noscript','style','textarea','pre','code'] },
-        startup: { typeset:false }
+        tex: {
+            inlineMath:  [['$','$'],['\\(','\\)']],
+            displayMath: [['$$','$$'],['\\[','\\]']],
+            processEscapes: true,
+            processEnvironments: true
+        },
+        options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] },
+        startup: { typeset: false }
     };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
@@ -19,33 +24,25 @@
 </head>
 <body>
 
-<!-- FLOATING MATH SYMBOLS -->
 <div class="math-bg" aria-hidden="true">
-    <span class="math-sym" style="--x:5%;--y:10%;--s:2.2rem;--d:0s;--dur:18s">∑</span>
-    <span class="math-sym" style="--x:15%;--y:70%;--s:1.6rem;--d:3s;--dur:22s">π</span>
-    <span class="math-sym" style="--x:25%;--y:30%;--s:2.8rem;--d:1.5s;--dur:16s">∫</span>
-    <span class="math-sym" style="--x:35%;--y:80%;--s:1.4rem;--d:5s;--dur:20s">√</span>
-    <span class="math-sym" style="--x:45%;--y:15%;--s:2rem;--d:2s;--dur:25s">∞</span>
-    <span class="math-sym" style="--x:55%;--y:60%;--s:1.8rem;--d:7s;--dur:19s">Δ</span>
-    <span class="math-sym" style="--x:65%;--y:25%;--s:2.4rem;--d:0.5s;--dur:21s">∇</span>
-    <span class="math-sym" style="--x:75%;--y:75%;--s:1.5rem;--d:4s;--dur:17s">θ</span>
-    <span class="math-sym" style="--x:85%;--y:40%;--s:2rem;--d:6s;--dur:23s">λ</span>
-    <span class="math-sym" style="--x:92%;--y:85%;--s:1.7rem;--d:2.5s;--dur:18s">α</span>
-    <span class="math-sym" style="--x:8%;--y:50%;--s:1.3rem;--d:8s;--dur:24s">β</span>
-    <span class="math-sym" style="--x:50%;--y:90%;--s:2.2rem;--d:1s;--dur:20s">φ</span>
-    <span class="math-sym" style="--x:30%;--y:5%;--s:1.9rem;--d:9s;--dur:16s">∂</span>
-    <span class="math-sym" style="--x:70%;--y:55%;--s:1.4rem;--d:3.5s;--dur:22s">μ</span>
-    <span class="math-sym" style="--x:90%;--y:15%;--s:2.6rem;--d:6.5s;--dur:19s">Ω</span>
-    <span class="math-sym" style="--x:20%;--y:95%;--s:1.6rem;--d:11s;--dur:26s">σ</span>
-    <span class="math-sym" style="--x:60%;--y:8%;--s:1.8rem;--d:4.5s;--dur:21s">ε</span>
-    <span class="math-sym" style="--x:42%;--y:45%;--s:1.2rem;--d:7.5s;--dur:15s">∈</span>
-    <span class="math-sym" style="--x:80%;--y:30%;--s:2rem;--d:10s;--dur:28s">≡</span>
-    <span class="math-sym" style="--x:12%;--y:88%;--s:1.5rem;--d:0.8s;--dur:17s">÷</span>
+    <span class="math-sym" style="--x:5%;--y:10%;--s:2.2rem;--d:0s;--dur:18s">&#8721;</span>
+    <span class="math-sym" style="--x:15%;--y:70%;--s:1.6rem;--d:3s;--dur:22s">&#960;</span>
+    <span class="math-sym" style="--x:25%;--y:30%;--s:2.8rem;--d:1.5s;--dur:16s">&#8747;</span>
+    <span class="math-sym" style="--x:35%;--y:80%;--s:1.4rem;--d:5s;--dur:20s">&#8730;</span>
+    <span class="math-sym" style="--x:45%;--y:15%;--s:2rem;--d:2s;--dur:25s">&#8734;</span>
+    <span class="math-sym" style="--x:55%;--y:60%;--s:1.8rem;--d:7s;--dur:19s">&#916;</span>
+    <span class="math-sym" style="--x:65%;--y:25%;--s:2.4rem;--d:0.5s;--dur:21s">&#8711;</span>
+    <span class="math-sym" style="--x:75%;--y:75%;--s:1.5rem;--d:4s;--dur:17s">&#952;</span>
+    <span class="math-sym" style="--x:85%;--y:40%;--s:2rem;--d:6s;--dur:23s">&#955;</span>
+    <span class="math-sym" style="--x:92%;--y:85%;--s:1.7rem;--d:2.5s;--dur:18s">&#945;</span>
+    <span class="math-sym" style="--x:8%;--y:50%;--s:1.3rem;--d:8s;--dur:24s">&#946;</span>
+    <span class="math-sym" style="--x:50%;--y:90%;--s:2.2rem;--d:1s;--dur:20s">&#966;</span>
+    <span class="math-sym" style="--x:30%;--y:5%;--s:1.9rem;--d:9s;--dur:16s">&#8706;</span>
+    <span class="math-sym" style="--x:70%;--y:55%;--s:1.4rem;--d:3.5s;--dur:22s">&#956;</span>
+    <span class="math-sym" style="--x:90%;--y:15%;--s:2.6rem;--d:6.5s;--dur:19s">&#937;</span>
 </div>
 
 <div class="app">
-
-<!-- SIDEBAR OVERLAY -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
@@ -54,7 +51,7 @@
         <div class="sidebar-avatar">AN</div>
         <div class="sidebar-info">
             <div class="sidebar-name">Anupam Nigam</div>
-            <div class="sidebar-role">Asst. Prof. · Mathematics</div>
+            <div class="sidebar-role">Asst. Prof. &#183; Mathematics</div>
         </div>
     </div>
 
@@ -101,12 +98,12 @@
         <button class="snav-btn" onclick="switchTab('exam_hub',this)" data-tab="exam_hub">
             <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
             <span class="snav-text">Exam Hub</span>
-            <span class="snav-badge new" style="background:var(--rose);color:#fff;">HOT</span>
+            <span class="snav-badge new" style="background:var(--rose);color:#fff">HOT</span>
         </button>
         <button class="snav-btn" onclick="switchTab('pyq',this)" data-tab="pyq">
-            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <span class="snav-text">PYQ Practice</span>
-            <span class="snav-badge new" style="background:var(--rose);color:#fff;">HOT</span>
+            <span class="snav-badge new" style="background:var(--rose);color:#fff">HOT</span>
         </button>
     </nav>
 
@@ -154,16 +151,13 @@
             LinkedIn
         </a>
     </div>
-
     <div class="sidebar-footer">
-        <div class="api-badge" id="apiBadge">● Ready</div>
+        <div class="api-badge" id="apiBadge">&#9679; Ready</div>
     </div>
 </aside>
 
-<!-- MAIN SHELL -->
+<!-- SHELL -->
 <div class="shell" id="shell">
-
-    <!-- HEADER -->
     <header class="header">
         <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
             <span></span><span></span><span></span>
@@ -180,790 +174,635 @@
         </div>
     </header>
 
-    <!-- MAIN -->
     <main class="main">
 
-        <!-- ══════════════════════════════════════════════
-             TAB: ASK ANUPAM
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content active" id="tab-math">
-            <div class="chat-window" id="chatWindow">
-                <div class="welcome">
-                    <div class="welcome-bg"></div>
-                    <div class="welcome-inner">
-                        <div class="welcome-symbol">∑</div>
-                        <h1 class="welcome-title">Ask Anupam</h1>
-                        <p class="welcome-sub">Your personal mathematics guide — Class 11 to IMO level.<br>Ask anything. Upload any problem. Every answer is step by step.</p>
-                        <div class="welcome-chips">
-                            <button class="chip" onclick="fillQuestion('Explain eigenvalues with examples')">Eigenvalues</button>
-                            <button class="chip" onclick="fillQuestion('What is Bayes theorem and how to apply it?')">Bayes Theorem</button>
-                            <button class="chip" onclick="fillQuestion('Prove that √2 is irrational')">Prove √2 irrational</button>
-                            <button class="chip" onclick="fillQuestion('Explain Fourier Transform intuitively')">Fourier Transform</button>
-                        </div>
-                        <div class="difficulty-row">
-                            <span class="diff-label">Level</span>
-                            <select id="difficulty" class="diff-select">
-                                <option value="Class 11/12">Class 11 / 12</option>
-                                <option value="Undergraduate" selected>Undergraduate</option>
-                                <option value="JEE Advanced / IMO">JEE Advanced / IMO</option>
-                                <option value="Research Level">Research Level</option>
-                            </select>
-                            <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
-                        </div>
+<!-- ══ TAB: ASK ANUPAM ══ -->
+<div class="tab-content active" id="tab-math">
+    <div class="chat-window" id="chatWindow">
+        <div class="welcome">
+            <div class="welcome-bg"></div>
+            <div class="welcome-inner">
+                <div class="welcome-symbol">&#8721;</div>
+                <h1 class="welcome-title">Ask Anupam</h1>
+                <p class="welcome-sub">Your personal mathematics guide &#8212; Class 11 to IMO level.<br>Ask anything. Upload any problem. Every answer is step by step.</p>
+                <div class="welcome-chips">
+                    <button class="chip" onclick="fillQuestion('Explain eigenvalues with examples')">Eigenvalues</button>
+                    <button class="chip" onclick="fillQuestion('What is Bayes theorem and how to apply it?')">Bayes Theorem</button>
+                    <button class="chip" onclick="fillQuestion('Prove that &#8730;2 is irrational')">Prove &#8730;2 irrational</button>
+                    <button class="chip" onclick="fillQuestion('Explain Fourier Transform intuitively')">Fourier Transform</button>
+                </div>
+                <div class="difficulty-row">
+                    <span class="diff-label">Level</span>
+                    <select id="difficulty" class="diff-select">
+                        <option value="Class 11/12">Class 11 / 12</option>
+                        <option value="Undergraduate" selected>Undergraduate</option>
+                        <option value="JEE Advanced / IMO">JEE Advanced / IMO</option>
+                        <option value="Research Level">Research Level</option>
+                    </select>
+                    <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="imagePreview" class="image-preview hidden">
+        <img id="previewImg" src="" alt="problem"/>
+        <span class="preview-label">Image attached</span>
+        <button onclick="removeImage()">&#10005; Remove</button>
+    </div>
+    <div class="input-area">
+        <div class="input-box">
+            <label for="imageUpload" class="attach-btn" title="Upload image">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)" hidden/>
+            </label>
+            <textarea id="userInput" placeholder="Ask any mathematics question&#8230;" rows="1"
+                onkeydown="handleKey(event,'math')" oninput="autoResize(this)"></textarea>
+            <button class="send-btn" onclick="sendMessage()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+        </div>
+        <div class="input-hint">Enter to send &#183; Shift+Enter for new line &#183; &#128206; attach image</div>
+    </div>
+</div>
+
+<!-- ══ TAB: INTUITION BUILDER ══ -->
+<div class="tab-content" id="tab-intuition">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent amber"></div>
+            <div class="panel-icon" style="color:var(--amber)">&#128161;</div>
+            <h2 class="panel-title">Intuition Builder</h2>
+            <p class="panel-sub">Understand the WHY before the HOW &#8212; story, analogy, and visual thinking first</p>
+        </div>
+        <div class="panel-chat" id="intuitionWindow">
+            <div class="panel-welcome">
+                <div class="feature-showcase">
+                    <div class="showcase-card sc-amber"><div class="sc-icon">&#128214;</div><div class="sc-title">The Story</div><p>Why humans needed this concept</p></div>
+                    <div class="showcase-card sc-teal"><div class="sc-icon">&#127919;</div><div class="sc-title">The Analogy</div><p>Connect to what you already know</p></div>
+                    <div class="showcase-card sc-rose"><div class="sc-icon">&#129504;</div><div class="sc-title">The Insight</div><p>The core idea in plain English</p></div>
+                </div>
+                <div class="pw-chips">
+                    <button class="chip" onclick="fillPanel('intuition','derivatives')">Derivatives</button>
+                    <button class="chip" onclick="fillPanel('intuition','imaginary numbers')">Imaginary Numbers</button>
+                    <button class="chip" onclick="fillPanel('intuition','matrices')">Matrices</button>
+                    <button class="chip" onclick="fillPanel('intuition','infinity')">Infinity</button>
+                    <button class="chip" onclick="fillPanel('intuition','probability')">Probability</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-amber">
+                <textarea id="intuitionInput" placeholder="e.g. derivatives, limits, complex numbers, infinity&#8230;" rows="1"
+                    onkeydown="handleKey(event,'intuition')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-amber" onclick="sendPanel('intuition')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: STORY MODE ══ -->
+<div class="tab-content" id="tab-storytelling">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#9997;&#65039;</div>
+            <h2 class="panel-title">Story Mode</h2>
+            <p class="panel-sub">Mathematics as documentary &#8212; the struggles, breakthroughs, and world-changing ideas</p>
+        </div>
+        <div class="panel-chat" id="storytellingWindow">
+            <div class="panel-welcome">
+                <div class="feature-showcase">
+                    <div class="showcase-card sc-rose"><div class="sc-icon">&#9889;</div><div class="sc-title">The Problem</div><p>The real human struggle that sparked invention</p></div>
+                    <div class="showcase-card sc-purple"><div class="sc-icon">&#128269;</div><div class="sc-title">The Discovery</div><p>The flash of insight that changed everything</p></div>
+                    <div class="showcase-card sc-teal"><div class="sc-icon">&#127758;</div><div class="sc-title">The Impact</div><p>How it reshaped science and thought</p></div>
+                </div>
+                <div class="pw-chips">
+                    <button class="chip chip-rose" onclick="fillPanel('storytelling','calculus')">Calculus</button>
+                    <button class="chip chip-rose" onclick="fillPanel('storytelling','Fourier transform')">Fourier Transform</button>
+                    <button class="chip chip-rose" onclick="fillPanel('storytelling','prime numbers')">Prime Numbers</button>
+                    <button class="chip chip-rose" onclick="fillPanel('storytelling','non-Euclidean geometry')">Non-Euclidean Geometry</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-rose">
+                <textarea id="storytellingInput" placeholder="e.g. calculus, group theory, the number zero&#8230;" rows="1"
+                    onkeydown="handleKey(event,'storytelling')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-rose" onclick="sendPanel('storytelling')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: THINK WITH ME ══ -->
+<div class="tab-content" id="tab-socratic">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent teal"></div>
+            <div class="panel-icon" style="color:var(--teal)">&#129417;</div>
+            <h2 class="panel-title">Think With Me</h2>
+            <p class="panel-sub">Share your confusion &#8212; I&#8217;ll ask questions that help you discover answers yourself</p>
+        </div>
+        <div class="panel-chat" id="socraticWindow">
+            <div class="panel-welcome">
+                <div class="socratic-quote">
+                    <div class="sq-mark">&#8220;</div>
+                    <p>I cannot teach anybody anything. I can only make them think.</p>
+                    <div class="sq-attr">&#8212; Socrates</div>
+                </div>
+                <div class="pw-chips">
+                    <button class="chip chip-teal" onclick="fillPanel('socratic','I don\'t understand why division by zero is undefined')">Division by zero</button>
+                    <button class="chip chip-teal" onclick="fillPanel('socratic','Infinity confuses me &#8212; is it a number?')">What is infinity?</button>
+                    <button class="chip chip-teal" onclick="fillPanel('socratic','I don\'t understand why negative times negative is positive')">Negative &#215; Negative</button>
+                    <button class="chip chip-teal" onclick="fillPanel('socratic','Why does 0.999... equal 1?')">0.999&#8230; = 1?</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-teal">
+                <textarea id="socraticInput" placeholder="Share your confusion or question&#8230;" rows="1"
+                    onkeydown="handleKey(event,'socratic')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('socratic')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: CONCEPT MAP ══ -->
+<div class="tab-content" id="tab-concept_map">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent purple"></div>
+            <div class="panel-icon" style="color:var(--purple)">&#128375;&#65039;</div>
+            <h2 class="panel-title">Concept Map</h2>
+            <p class="panel-sub">See how mathematical ideas connect &#8212; prerequisites, extensions, and real-world links</p>
+        </div>
+        <div class="panel-chat" id="concept_mapWindow">
+            <div class="panel-welcome">
+                <div class="feature-showcase">
+                    <div class="showcase-card sc-purple"><div class="sc-icon">&#8592;&#65039;</div><div class="sc-title">Prerequisites</div><p>What you need to know first</p></div>
+                    <div class="showcase-card sc-amber"><div class="sc-icon">&#128279;</div><div class="sc-title">Connections</div><p>Related topics and extensions</p></div>
+                    <div class="showcase-card sc-teal"><div class="sc-icon">&#128506;&#65039;</div><div class="sc-title">Learning Path</div><p>Step-by-step mastery roadmap</p></div>
+                </div>
+                <div class="pw-chips">
+                    <button class="chip chip-purple" onclick="fillPanel('concept_map','linear algebra')">Linear Algebra</button>
+                    <button class="chip chip-purple" onclick="fillPanel('concept_map','differential equations')">Diff. Equations</button>
+                    <button class="chip chip-purple" onclick="fillPanel('concept_map','number theory')">Number Theory</button>
+                    <button class="chip chip-purple" onclick="fillPanel('concept_map','topology')">Topology</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-purple">
+                <textarea id="concept_mapInput" placeholder="e.g. calculus, group theory, statistics&#8230;" rows="1"
+                    onkeydown="handleKey(event,'concept_map')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-purple" onclick="sendPanel('concept_map')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: CAREER PATHS ══ -->
+<div class="tab-content" id="tab-career">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#128640;</div>
+            <h2 class="panel-title">Career Pathways</h2>
+            <p class="panel-sub">From mathematical interest to dream career &#8212; complete step-by-step roadmaps</p>
+        </div>
+        <div class="panel-chat" id="careerWindow">
+            <div class="panel-welcome">
+                <div class="career-hero">
+                    <div class="career-paths-preview">
+                        <div class="cp-item" style="--c:var(--teal)">Data Science</div>
+                        <div class="cp-item" style="--c:var(--amber)">Cryptography</div>
+                        <div class="cp-item" style="--c:var(--rose)">Quantum Computing</div>
+                        <div class="cp-item" style="--c:var(--purple)">Finance &amp; Quant</div>
+                        <div class="cp-item" style="--c:var(--teal)">Academia</div>
+                        <div class="cp-item" style="--c:var(--amber)">AI / ML Research</div>
+                        <div class="cp-item" style="--c:var(--rose)">Aerospace</div>
+                        <div class="cp-item" style="--c:var(--purple)">Game Theory</div>
+                    </div>
+                </div>
+                <div class="pw-chips">
+                    <button class="chip chip-rose" onclick="fillPanel('career','machine learning and linear algebra')">ML &amp; Linear Algebra</button>
+                    <button class="chip chip-rose" onclick="fillPanel('career','cryptography and number theory')">Cryptography</button>
+                    <button class="chip chip-rose" onclick="fillPanel('career','statistics and probability')">Statistics</button>
+                    <button class="chip chip-rose" onclick="fillPanel('career','pure mathematics and research')">Pure Mathematics</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-rose">
+                <textarea id="careerInput" placeholder="What mathematics excites you? e.g. calculus, game theory&#8230;" rows="1"
+                    onkeydown="handleKey(event,'career')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-rose" onclick="sendPanel('career')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: EXAM HUB ══ -->
+<div class="tab-content" id="tab-exam_hub">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#127891;</div>
+            <h2 class="panel-title">Examination Hub</h2>
+            <p class="panel-sub">Official syllabus, paper pattern &amp; topic-wise marks for GATE &#183; CSIR NET &#183; IIT JAM</p>
+        </div>
+        <div class="exam-hub-body">
+            <div class="exam-selector">
+                <button class="exam-sel-btn active" id="esel-gate" onclick="selectExam('gate')">
+                    <span class="exam-sel-icon">&#127963;&#65039;</span>
+                    <span class="exam-sel-name">GATE</span>
+                    <span class="exam-sel-sub">MA &#183; Mathematics</span>
+                </button>
+                <button class="exam-sel-btn" id="esel-csirnet" onclick="selectExam('csirnet')">
+                    <span class="exam-sel-icon">&#128300;</span>
+                    <span class="exam-sel-name">CSIR NET</span>
+                    <span class="exam-sel-sub">Mathematical Sciences</span>
+                </button>
+                <button class="exam-sel-btn" id="esel-iitjam" onclick="selectExam('iitjam')">
+                    <span class="exam-sel-icon">&#9881;&#65039;</span>
+                    <span class="exam-sel-name">IIT JAM</span>
+                    <span class="exam-sel-sub">MA &#183; Mathematics</span>
+                </button>
+            </div>
+            <div class="exam-tabs">
+                <button class="exam-tab-btn active" onclick="switchExamTab('syllabus',this)">&#128203; Syllabus</button>
+                <button class="exam-tab-btn" onclick="switchExamTab('pattern',this)">&#128202; Paper Pattern</button>
+                <button class="exam-tab-btn" onclick="switchExamTab('weightage',this)">&#9878;&#65039; Topic Weightage</button>
+            </div>
+            <div class="exam-content-area" id="examContentArea"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: PYQ PRACTICE ══ -->
+<div class="tab-content" id="tab-pyq">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent amber"></div>
+            <div class="panel-icon" style="color:var(--amber)">&#128221;</div>
+            <h2 class="panel-title">PYQ Practice</h2>
+            <p class="panel-sub">Previous Year Questions from GATE &#183; CSIR NET &#183; IIT JAM &#8212; with AI-powered solutions</p>
+        </div>
+        <div class="pyq-body">
+            <div class="pyq-selector">
+                <button class="pyq-sel-btn active" id="psel-gate" onclick="selectPYQExam('gate')">&#127963;&#65039; GATE MA</button>
+                <button class="pyq-sel-btn" id="psel-csirnet" onclick="selectPYQExam('csirnet')">&#128300; CSIR NET</button>
+                <button class="pyq-sel-btn" id="psel-iitjam" onclick="selectPYQExam('iitjam')">&#9881;&#65039; IIT JAM</button>
+            </div>
+            <div class="pyq-topic-bar" id="pyqTopicBar"></div>
+            <div class="pyq-chat" id="pyqWindow">
+                <div class="pyq-welcome" id="pyqWelcome">
+                    <div class="pyq-hero-icon">&#128221;</div>
+                    <h3>Practice Previous Year Questions</h3>
+                    <p>Select an exam above, then choose a topic to get authentic PYQs with complete step-by-step solutions.</p>
+                    <div class="pyq-quick-btns">
+                        <button class="pyq-quick" onclick="askPYQ('gate','Real Analysis','2023')">GATE 2023 &#183; Real Analysis</button>
+                        <button class="pyq-quick" onclick="askPYQ('csirnet','Linear Algebra','2023')">CSIR NET &#183; Linear Algebra</button>
+                        <button class="pyq-quick" onclick="askPYQ('iitjam','Calculus','2024')">IIT JAM 2024 &#183; Calculus</button>
+                        <button class="pyq-quick" onclick="askPYQ('gate','Complex Analysis','2022')">GATE 2022 &#183; Complex Analysis</button>
+                        <button class="pyq-quick" onclick="askPYQ('csirnet','Abstract Algebra','2022')">CSIR NET &#183; Abstract Algebra</button>
+                        <button class="pyq-quick" onclick="askPYQ('iitjam','Differential Equations','2023')">IIT JAM &#183; Diff. Equations</button>
                     </div>
                 </div>
             </div>
-            <div id="imagePreview" class="image-preview hidden">
-                <img id="previewImg" src="" alt="problem"/>
-                <span class="preview-label">Image attached</span>
-                <button onclick="removeImage()">✕ Remove</button>
-            </div>
             <div class="input-area">
-                <div class="input-box">
-                    <label for="imageUpload" class="attach-btn" title="Upload image">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                        <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)" hidden/>
-                    </label>
-                    <textarea id="userInput" placeholder="Ask any mathematics question…" rows="1"
-                        onkeydown="handleKey(event,'math')" oninput="autoResize(this)"></textarea>
-                    <button class="send-btn" onclick="sendMessage()">
+                <div class="input-box input-amber">
+                    <textarea id="pyqInput" placeholder="Ask for PYQs e.g. GATE 2023 real analysis questions&#8230;" rows="1"
+                        onkeydown="handleKey(event,'pyq')" oninput="autoResize(this)"></textarea>
+                    <button class="send-btn send-amber" onclick="sendPanel('pyq')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
                 </div>
-                <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 attach image</div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: INTUITION BUILDER
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-intuition">
-            <div class="panel-wrap">
-                <div class="panel-header" style="--accent-color: var(--amber)">
-                    <div class="panel-accent amber"></div>
-                    <div class="panel-icon" style="color:var(--amber)">💡</div>
-                    <h2 class="panel-title">Intuition Builder</h2>
-                    <p class="panel-sub">Understand the WHY before the HOW — story, analogy, and visual thinking first</p>
+<!-- ══ TAB: DAILY PUZZLE ══ -->
+<div class="tab-content" id="tab-daily_puzzle">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent amber"></div>
+            <div class="panel-icon" style="color:var(--amber)">&#129513;</div>
+            <h2 class="panel-title">Daily Puzzle</h2>
+            <p class="panel-sub">Pattern, observation, and reasoning puzzles &#8212; pure mathematical thinking</p>
+        </div>
+        <div class="panel-chat" id="daily_puzzleWindow">
+            <div class="panel-welcome">
+                <div class="puzzle-hero">
+                    <div class="ph-number">?</div>
+                    <p class="ph-text">Every puzzle trains your mind to <em>notice patterns</em>, <em>ask questions</em>, and <em>reason from first principles</em>.</p>
                 </div>
-                <div class="panel-chat" id="intuitionWindow">
-                    <div class="panel-welcome">
-                        <div class="feature-showcase">
-                            <div class="showcase-card sc-amber">
-                                <div class="sc-icon">📖</div>
-                                <div class="sc-title">The Story</div>
-                                <p>Why humans needed this concept</p>
-                            </div>
-                            <div class="showcase-card sc-teal">
-                                <div class="sc-icon">🎯</div>
-                                <div class="sc-title">The Analogy</div>
-                                <p>Connect to what you already know</p>
-                            </div>
-                            <div class="showcase-card sc-rose">
-                                <div class="sc-icon">🧠</div>
-                                <div class="sc-title">The Insight</div>
-                                <p>The core idea in plain English</p>
-                            </div>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip" onclick="fillPanel('intuition','derivatives')">Derivatives</button>
-                            <button class="chip" onclick="fillPanel('intuition','imaginary numbers')">Imaginary Numbers</button>
-                            <button class="chip" onclick="fillPanel('intuition','matrices')">Matrices</button>
-                            <button class="chip" onclick="fillPanel('intuition','infinity')">Infinity</button>
-                            <button class="chip" onclick="fillPanel('intuition','probability')">Probability</button>
-                        </div>
-                    </div>
+                <div class="pw-chips">
+                    <button class="chip" onclick="generatePuzzle('number patterns')">Number Patterns</button>
+                    <button class="chip" onclick="generatePuzzle('geometry')">Geometry</button>
+                    <button class="chip" onclick="generatePuzzle('logic and infinity')">Logic &amp; Infinity</button>
+                    <button class="chip" onclick="generatePuzzle('combinatorics')">Counting</button>
+                    <button class="chip" onclick="generatePuzzle('any surprising mathematics')">Surprise Me!</button>
                 </div>
-                <div class="input-area">
-                    <div class="input-box input-amber">
-                        <textarea id="intuitionInput" placeholder="e.g. derivatives, limits, complex numbers, infinity…" rows="1"
-                            onkeydown="handleKey(event,'intuition')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-amber" onclick="sendPanel('intuition')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
+                <button class="generate-puzzle-btn" onclick="generatePuzzle('any mathematical topic')">
+                    <span>&#10022;</span> Generate Today&#8217;s Puzzle
+                </button>
             </div>
         </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="daily_puzzleInput" placeholder="Or request a puzzle on a specific topic&#8230;" rows="1"
+                    onkeydown="handleKey(event,'daily_puzzle')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('daily_puzzle')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: STORYTELLING MODE
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-storytelling">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent rose"></div>
-                    <div class="panel-icon" style="color:var(--rose)">✍️</div>
-                    <h2 class="panel-title">Story Mode</h2>
-                    <p class="panel-sub">Mathematics as documentary — the struggles, breakthroughs, and world-changing ideas</p>
+<!-- ══ TAB: VISUAL PROOFS ══ -->
+<div class="tab-content" id="tab-visual_proof">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent teal"></div>
+            <div class="panel-icon" style="color:var(--teal)">&#128065;&#65039;</div>
+            <h2 class="panel-title">Visual Proofs</h2>
+            <p class="panel-sub">See why theorems are true &#8212; geometric proofs you can visualize with your mind&#8217;s eye</p>
+        </div>
+        <div class="panel-chat" id="visual_proofWindow">
+            <div class="panel-welcome">
+                <div class="feature-showcase">
+                    <div class="showcase-card sc-teal"><div class="sc-icon">&#128444;&#65039;</div><div class="sc-title">See It</div><p>Visual setup described step by step</p></div>
+                    <div class="showcase-card sc-rose"><div class="sc-icon">&#10024;</div><div class="sc-title">The Insight</div><p>The exact moment the proof clicks</p></div>
+                    <div class="showcase-card sc-amber"><div class="sc-icon">&#128208;</div><div class="sc-title">Why It Works</div><p>How the visual becomes rigorous math</p></div>
                 </div>
-                <div class="panel-chat" id="storytellingWindow">
-                    <div class="panel-welcome">
-                        <div class="feature-showcase">
-                            <div class="showcase-card sc-rose">
-                                <div class="sc-icon">⚡</div>
-                                <div class="sc-title">The Problem</div>
-                                <p>The real human struggle that sparked invention</p>
-                            </div>
-                            <div class="showcase-card sc-purple">
-                                <div class="sc-icon">🔍</div>
-                                <div class="sc-title">The Discovery</div>
-                                <p>The flash of insight that changed everything</p>
-                            </div>
-                            <div class="showcase-card sc-teal">
-                                <div class="sc-icon">🌍</div>
-                                <div class="sc-title">The Impact</div>
-                                <p>How it reshaped science, technology, and thought</p>
-                            </div>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip chip-rose" onclick="fillPanel('storytelling','calculus')">Calculus</button>
-                            <button class="chip chip-rose" onclick="fillPanel('storytelling','Fourier transform')">Fourier Transform</button>
-                            <button class="chip chip-rose" onclick="fillPanel('storytelling','prime numbers')">Prime Numbers</button>
-                            <button class="chip chip-rose" onclick="fillPanel('storytelling','non-Euclidean geometry')">Non-Euclidean Geometry</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box input-rose">
-                        <textarea id="storytellingInput" placeholder="e.g. calculus, group theory, the number zero, chaos theory…" rows="1"
-                            onkeydown="handleKey(event,'storytelling')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-rose" onclick="sendPanel('storytelling')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
+                <div class="pw-chips">
+                    <button class="chip" onclick="fillPanel('visual_proof','Pythagorean theorem')">Pythagorean Theorem</button>
+                    <button class="chip" onclick="fillPanel('visual_proof','sum of first n natural numbers')">Sum 1+2+&#8230;+n</button>
+                    <button class="chip" onclick="fillPanel('visual_proof','infinite geometric series sum')">Geometric Series</button>
+                    <button class="chip" onclick="fillPanel('visual_proof','Euler identity')">Euler&#8217;s Identity</button>
                 </div>
             </div>
         </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="visual_proofInput" placeholder="e.g. Pythagorean theorem, AM-GM inequality, area of circle&#8230;" rows="1"
+                    onkeydown="handleKey(event,'visual_proof')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('visual_proof')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: THINK WITH ME (SOCRATIC)
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-socratic">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent teal"></div>
-                    <div class="panel-icon" style="color:var(--teal)">🦉</div>
-                    <h2 class="panel-title">Think With Me</h2>
-                    <p class="panel-sub">Share your confusion — I'll ask questions that help you discover answers yourself</p>
-                </div>
-                <div class="panel-chat" id="socraticWindow">
-                    <div class="panel-welcome">
-                        <div class="socratic-quote">
-                            <div class="sq-mark">"</div>
-                            <p>I cannot teach anybody anything. I can only make them think.</p>
-                            <div class="sq-attr">— Socrates</div>
-                        </div>
-                        <p style="font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.8;">
-                            This mode does NOT give you answers. It asks you questions that guide you to discover the answer yourself — the only way true mathematical understanding is built.
-                        </p>
-                        <div class="pw-chips">
-                            <button class="chip chip-teal" onclick="fillPanel('socratic','I don\'t understand why division by zero is undefined')">Division by zero</button>
-                            <button class="chip chip-teal" onclick="fillPanel('socratic','Infinity confuses me — is it a number?')">What is infinity?</button>
-                            <button class="chip chip-teal" onclick="fillPanel('socratic','I don\'t understand why negative times negative is positive')">Negative × Negative</button>
-                            <button class="chip chip-teal" onclick="fillPanel('socratic','Why does 0.999... equal 1?')">0.999… = 1?</button>
-                        </div>
+<!-- ══ TAB: GRAPH PLOTTER ══ -->
+<div class="tab-content" id="tab-graph">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent amber"></div>
+            <div class="panel-icon" style="color:var(--amber)">&#9678;</div>
+            <h2 class="panel-title">Graph Plotter</h2>
+            <p class="panel-sub">Plot any function &#8212; x^2, sin(x), e^x, ln(x), abs(x), tan(x), and more</p>
+        </div>
+        <div class="graph-body">
+            <div class="graph-controls">
+                <div class="graph-input-row">
+                    <div class="fn-input-wrap">
+                        <span class="fn-label">f(x) =</span>
+                        <input type="text" id="functionInput"
+                            placeholder="x^2  &#183;  sin(x)  &#183;  x^3-3*x  &#183;  e^x  &#183;  ln(x)"
+                            class="function-input"
+                            onkeydown="if(event.key==='Enter') plotFunction()"/>
                     </div>
+                    <button onclick="plotFunction()" class="plot-btn">Plot &#8594;</button>
                 </div>
-                <div class="input-area">
-                    <div class="input-box input-teal">
-                        <textarea id="socraticInput" placeholder="Share your confusion or question — any mathematical concept you're puzzled by…" rows="1"
-                            onkeydown="handleKey(event,'socratic')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn" onclick="sendPanel('socratic')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
+                <div class="quick-examples">
+                    <span class="eg-label">Quick:</span>
+                    <button class="eg-btn" onclick="quickPlot('x^2')">x&#178;</button>
+                    <button class="eg-btn" onclick="quickPlot('sin(x)')">sin(x)</button>
+                    <button class="eg-btn" onclick="quickPlot('cos(x)')">cos(x)</button>
+                    <button class="eg-btn" onclick="quickPlot('tan(x)')">tan(x)</button>
+                    <button class="eg-btn" onclick="quickPlot('x^3-3*x')">x&#179;&#8722;3x</button>
+                    <button class="eg-btn" onclick="quickPlot('1/x')">1/x</button>
+                    <button class="eg-btn" onclick="quickPlot('sqrt(x)')">&#8730;x</button>
+                    <button class="eg-btn" onclick="quickPlot('e^x')">e&#739;</button>
+                    <button class="eg-btn" onclick="quickPlot('ln(x)')">ln(x)</button>
+                    <button class="eg-btn" onclick="quickPlot('abs(x)')">|x|</button>
+                    <button class="eg-btn" onclick="quickPlot('sin(x)/x')">sinc</button>
+                    <button class="eg-btn" onclick="quickPlot('x^2*sin(x)')">x&#178;sin(x)</button>
+                </div>
+            </div>
+            <div id="plotArea" class="plot-area-box"></div>
+            <div class="graph-analysis" id="graphAnalysis"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: PROJECTS ══ -->
+<div class="tab-content" id="tab-projects">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent teal"></div>
+            <div class="panel-icon">&#9672;</div>
+            <h2 class="panel-title">Mathematics Projects</h2>
+            <p class="panel-sub">Real-world projects from beginner to advanced &#8212; with resources and code</p>
+        </div>
+        <div class="panel-chat" id="projectsWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon">&#9672;</div>
+                <div class="pw-title">Get Project Ideas</div>
+                <p>Type any mathematics topic below to receive 5 detailed project ideas with applications, tools, and online resources.</p>
+                <div class="pw-chips">
+                    <button class="chip" onclick="fillPanel('projects','Graph Theory')">Graph Theory</button>
+                    <button class="chip" onclick="fillPanel('projects','Calculus')">Calculus</button>
+                    <button class="chip" onclick="fillPanel('projects','Statistics')">Statistics</button>
+                    <button class="chip" onclick="fillPanel('projects','Number Theory')">Number Theory</button>
                 </div>
             </div>
         </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="projectsInput" placeholder="e.g. Graph Theory, Calculus, Linear Algebra&#8230;" rows="1"
+                    onkeydown="handleKey(event,'projects')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('projects')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: CONCEPT MAP
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-concept_map">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent purple"></div>
-                    <div class="panel-icon" style="color:var(--purple)">🕸️</div>
-                    <h2 class="panel-title">Concept Map</h2>
-                    <p class="panel-sub">See how mathematical ideas connect — prerequisites, extensions, and real-world links</p>
-                </div>
-                <div class="panel-chat" id="concept_mapWindow">
-                    <div class="panel-welcome">
-                        <div class="feature-showcase">
-                            <div class="showcase-card sc-purple">
-                                <div class="sc-icon">⬅️</div>
-                                <div class="sc-title">Prerequisites</div>
-                                <p>What you need to know first</p>
-                            </div>
-                            <div class="showcase-card sc-amber">
-                                <div class="sc-icon">🔗</div>
-                                <div class="sc-title">Connections</div>
-                                <p>Related topics and extensions</p>
-                            </div>
-                            <div class="showcase-card sc-teal">
-                                <div class="sc-icon">🗺️</div>
-                                <div class="sc-title">Learning Path</div>
-                                <p>Step-by-step mastery roadmap</p>
-                            </div>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip chip-purple" onclick="fillPanel('concept_map','linear algebra')">Linear Algebra</button>
-                            <button class="chip chip-purple" onclick="fillPanel('concept_map','differential equations')">Diff. Equations</button>
-                            <button class="chip chip-purple" onclick="fillPanel('concept_map','number theory')">Number Theory</button>
-                            <button class="chip chip-purple" onclick="fillPanel('concept_map','topology')">Topology</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box input-purple">
-                        <textarea id="concept_mapInput" placeholder="e.g. calculus, group theory, statistics, complex analysis…" rows="1"
-                            onkeydown="handleKey(event,'concept_map')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-purple" onclick="sendPanel('concept_map')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
+<!-- ══ TAB: LEGENDS ══ -->
+<div class="tab-content" id="tab-mathematician">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#9673;</div>
+            <h2 class="panel-title">Mathematicians</h2>
+            <p class="panel-sub">Explore the lives, works and legacy of the greatest mathematical minds</p>
+        </div>
+        <div class="panel-chat" id="mathematicianWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--rose)">&#9673;</div>
+                <div class="pw-title">Explore a Mathematician</div>
+                <p>Type any mathematician&#8217;s name to get their biography, contributions, key theorems, famous quotes, and Wikipedia link.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-rose" onclick="fillPanel('mathematician','Srinivasa Ramanujan')">Ramanujan</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mathematician','Leonhard Euler')">Euler</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mathematician','Emmy Noether')">Emmy Noether</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mathematician','Carl Friedrich Gauss')">Gauss</button>
                 </div>
             </div>
         </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="mathematicianInput" placeholder="e.g. Srinivasa Ramanujan, Euler, Gauss&#8230;" rows="1"
+                    onkeydown="handleKey(event,'mathematician')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-rose" onclick="sendPanel('mathematician')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: DAILY PUZZLE
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-daily_puzzle">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent amber"></div>
-                    <div class="panel-icon" style="color:var(--amber)">🧩</div>
-                    <h2 class="panel-title">Daily Puzzle</h2>
-                    <p class="panel-sub">Pattern, observation, and reasoning puzzles — no computation, pure mathematical thinking</p>
-                </div>
-                <div class="panel-chat" id="daily_puzzleWindow">
-                    <div class="panel-welcome">
-                        <div class="puzzle-hero">
-                            <div class="ph-number">?</div>
-                            <p class="ph-text">Every puzzle is designed to build a mathematical thinking habit — not to test calculation, but to train your mind to <em>notice patterns</em>, <em>ask questions</em>, and <em>reason from first principles</em>.</p>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip" onclick="generatePuzzle('number patterns')">Number Patterns</button>
-                            <button class="chip" onclick="generatePuzzle('geometry')">Geometry</button>
-                            <button class="chip" onclick="generatePuzzle('logic and infinity')">Logic & Infinity</button>
-                            <button class="chip" onclick="generatePuzzle('combinatorics')">Counting</button>
-                            <button class="chip" onclick="generatePuzzle('any surprising mathematics')">Surprise Me!</button>
-                        </div>
-                        <button class="generate-puzzle-btn" onclick="generatePuzzle('any mathematical topic')">
-                            <span>✦</span> Generate Today's Puzzle
-                        </button>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box">
-                        <textarea id="daily_puzzleInput" placeholder="Or request a puzzle on a specific topic…" rows="1"
-                            onkeydown="handleKey(event,'daily_puzzle')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn" onclick="sendPanel('daily_puzzle')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
+<!-- ══ TAB: APPLICATIONS ══ -->
+<div class="tab-content" id="tab-applications">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent purple"></div>
+            <div class="panel-icon" style="color:var(--purple)">&#9670;</div>
+            <h2 class="panel-title">Real-World Applications</h2>
+            <p class="panel-sub">Discover how mathematics powers the real world &#8212; 12 detailed applications per topic</p>
+        </div>
+        <div class="panel-chat" id="applicationsWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--purple)">&#9670;</div>
+                <div class="pw-title">Explore Applications</div>
+                <p>Type any mathematics topic to see 12 detailed real-world applications with formulas, examples, and reliable resources.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-purple" onclick="fillPanel('applications','Fourier Transform')">Fourier Transform</button>
+                    <button class="chip chip-purple" onclick="fillPanel('applications','Linear Algebra')">Linear Algebra</button>
+                    <button class="chip chip-purple" onclick="fillPanel('applications','Probability')">Probability</button>
+                    <button class="chip chip-purple" onclick="fillPanel('applications','Differential Equations')">Diff Equations</button>
                 </div>
             </div>
         </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: VISUAL PROOFS
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-visual_proof">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent teal"></div>
-                    <div class="panel-icon" style="color:var(--teal)">👁️</div>
-                    <h2 class="panel-title">Visual Proofs</h2>
-                    <p class="panel-sub">See why theorems are true — geometric proofs you can visualize with your mind's eye</p>
-                </div>
-                <div class="panel-chat" id="visual_proofWindow">
-                    <div class="panel-welcome">
-                        <div class="feature-showcase">
-                            <div class="showcase-card sc-teal">
-                                <div class="sc-icon">🖼️</div>
-                                <div class="sc-title">See It</div>
-                                <p>Visual setup described step by step</p>
-                            </div>
-                            <div class="showcase-card sc-rose">
-                                <div class="sc-icon">✨</div>
-                                <div class="sc-title">The Insight</div>
-                                <p>The exact moment the proof clicks</p>
-                            </div>
-                            <div class="showcase-card sc-amber">
-                                <div class="sc-icon">📐</div>
-                                <div class="sc-title">Why It Works</div>
-                                <p>How the visual becomes rigorous math</p>
-                            </div>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip" onclick="fillPanel('visual_proof','Pythagorean theorem')">Pythagorean Theorem</button>
-                            <button class="chip" onclick="fillPanel('visual_proof','sum of first n natural numbers')">Sum 1+2+…+n</button>
-                            <button class="chip" onclick="fillPanel('visual_proof','why pi is irrational')">π is Irrational</button>
-                            <button class="chip" onclick="fillPanel('visual_proof','infinite geometric series sum')">Geometric Series</button>
-                            <button class="chip" onclick="fillPanel('visual_proof','Euler\'s identity e^iπ + 1 = 0')">Euler's Identity</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box">
-                        <textarea id="visual_proofInput" placeholder="e.g. Pythagorean theorem, AM-GM inequality, area of circle…" rows="1"
-                            onkeydown="handleKey(event,'visual_proof')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn" onclick="sendPanel('visual_proof')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="applicationsInput" placeholder="e.g. Fourier Transform, Eigenvalues, Probability&#8230;" rows="1"
+                    onkeydown="handleKey(event,'applications')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-purple" onclick="sendPanel('applications')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- ══════════════════════════════════════════════
-             TAB: CAREER PATHWAYS
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-career">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent rose"></div>
-                    <div class="panel-icon" style="color:var(--rose)">🚀</div>
-                    <h2 class="panel-title">Career Pathways</h2>
-                    <p class="panel-sub">From mathematical interest to dream career — complete step-by-step roadmaps</p>
-                </div>
-                <div class="panel-chat" id="careerWindow">
-                    <div class="panel-welcome">
-                        <div class="career-hero">
-                            <div class="career-paths-preview">
-                                <div class="cp-item" style="--c:var(--teal)">Data Science</div>
-                                <div class="cp-item" style="--c:var(--amber)">Cryptography</div>
-                                <div class="cp-item" style="--c:var(--rose)">Quantum Computing</div>
-                                <div class="cp-item" style="--c:var(--purple)">Finance & Quant</div>
-                                <div class="cp-item" style="--c:var(--teal)">Academia</div>
-                                <div class="cp-item" style="--c:var(--amber)">AI / ML Research</div>
-                                <div class="cp-item" style="--c:var(--rose)">Aerospace</div>
-                                <div class="cp-item" style="--c:var(--purple)">Game Theory</div>
-                            </div>
-                            <p style="font-size:13px;color:var(--text3);line-height:1.8;text-align:center;margin-top:16px;">
-                                Type any mathematical topic you find interesting, and get a complete career roadmap — roles, salaries, skills, year-by-year plan, and resources.
-                            </p>
-                        </div>
-                        <div class="pw-chips">
-                            <button class="chip chip-rose" onclick="fillPanel('career','machine learning and linear algebra')">ML & Linear Algebra</button>
-                            <button class="chip chip-rose" onclick="fillPanel('career','cryptography and number theory')">Cryptography</button>
-                            <button class="chip chip-rose" onclick="fillPanel('career','statistics and probability')">Statistics</button>
-                            <button class="chip chip-rose" onclick="fillPanel('career','differential equations and physics')">Physics & Engineering</button>
-                            <button class="chip chip-rose" onclick="fillPanel('career','pure mathematics and research')">Pure Mathematics</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box input-rose">
-                        <textarea id="careerInput" placeholder="What mathematics excites you? e.g. calculus, game theory, topology, data analysis…" rows="1"
-                            onkeydown="handleKey(event,'career')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-rose" onclick="sendPanel('career')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
+<!-- ══ TAB: ABOUT ══ -->
+<div class="tab-content" id="tab-about">
+    <div class="about-scroll">
+        <div class="about-hero">
+            <div class="about-avatar-wrap">
+                <div class="about-avatar">AN</div>
+                <div class="about-avatar-ring"></div>
+            </div>
+            <h2 class="about-name">Anupam Nigam</h2>
+            <p class="about-role">Assistant Professor of Mathematics</p>
+            <div class="social-links">
+                <a href="https://youtube.com/@pi_nomenal1729?si=yME60ABWMPWBJHMa" target="_blank" class="social-btn youtube">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    YouTube
+                </a>
+                <a href="https://www.instagram.com/pi_nomenal1729/reels" target="_blank" class="social-btn instagram">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    Instagram
+                </a>
+                <a href="https://www.linkedin.com/in/anupam-nigam-b2aa2b253" target="_blank" class="social-btn linkedin">
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    LinkedIn
+                </a>
+            </div>
+            <div class="about-tags">
+                <span class="tag tag-amber">Quantum Computing</span>
+                <span class="tag tag-teal">Data Science</span>
+                <span class="tag tag-rose">Machine Learning</span>
+                <span class="tag tag-purple">Graph Theory</span>
+                <span class="tag tag-amber">Cryptography</span>
+                <span class="tag tag-teal">Fourier Analysis</span>
+                <span class="tag tag-rose">Number Theory</span>
+                <span class="tag tag-purple">Content Creator</span>
             </div>
         </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: EXAM HUB
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-exam_hub">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent rose"></div>
-                    <div class="panel-icon" style="color:var(--rose)">🎓</div>
-                    <h2 class="panel-title">Examination Hub</h2>
-                    <p class="panel-sub">Official syllabus, paper pattern & topic-wise marks for GATE · CSIR NET · IIT JAM</p>
-                </div>
-                <div class="exam-hub-body">
-                    <!-- Exam Selector -->
-                    <div class="exam-selector">
-                        <button class="exam-sel-btn active" id="esel-gate" onclick="selectExam('gate')">
-                            <span class="exam-sel-icon">🏛️</span>
-                            <span class="exam-sel-name">GATE</span>
-                            <span class="exam-sel-sub">MA · Mathematics</span>
-                        </button>
-                        <button class="exam-sel-btn" id="esel-csirnet" onclick="selectExam('csirnet')">
-                            <span class="exam-sel-icon">🔬</span>
-                            <span class="exam-sel-name">CSIR NET</span>
-                            <span class="exam-sel-sub">Mathematical Sciences</span>
-                        </button>
-                        <button class="exam-sel-btn" id="esel-iitjam" onclick="selectExam('iitjam')">
-                            <span class="exam-sel-icon">⚙️</span>
-                            <span class="exam-sel-name">IIT JAM</span>
-                            <span class="exam-sel-sub">MA · Mathematics</span>
-                        </button>
-                    </div>
-                    <!-- Content Tabs -->
-                    <div class="exam-tabs">
-                        <button class="exam-tab-btn active" onclick="switchExamTab('syllabus',this)">📋 Syllabus</button>
-                        <button class="exam-tab-btn" onclick="switchExamTab('pattern',this)">📊 Paper Pattern</button>
-                        <button class="exam-tab-btn" onclick="switchExamTab('weightage',this)">⚖️ Topic Weightage</button>
-                    </div>
-                    <!-- Dynamic Content Area -->
-                    <div class="exam-content-area" id="examContentArea">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
+        <div class="about-cards">
+            <div class="about-card card-amber">
+                <div class="card-num">01</div>
+                <div class="card-label">Who I Am</div>
+                <p>I am Anupam Nigam, a 27-year-old assistant professor of mathematics passionate about making mathematics beautiful and accessible. I teach linear algebra to data science students, and mathematics to Class 11, 12, and graduation-level students.</p>
+            </div>
+            <div class="about-card card-teal">
+                <div class="card-num">02</div>
+                <div class="card-label">My Vision</div>
+                <p>Mathematics is not a subject &#8212; it is the language of the universe. MathSphere bridges the gap between content and conceptual clarity. Every student deserves step-by-step understanding, not just answers.</p>
+            </div>
+            <div class="about-card card-rose">
+                <div class="card-num">03</div>
+                <div class="card-label">What I Do</div>
+                <p>Beyond teaching, I create mathematics content on YouTube and Instagram, explore quantum computing, work on data science and machine learning, and build educational tools. Deep interests include elliptic curve cryptography and the mathematical foundations of AI.</p>
+            </div>
+            <div class="about-card card-purple">
+                <div class="card-num">04</div>
+                <div class="card-label">About MathSphere</div>
+                <p>MathSphere was built with one goal: give every student access to a brilliant mathematics teacher who never sleeps and always explains clearly. It uses state-of-the-art AI with verification to ensure accuracy &#8212; because in mathematics, accuracy is everything.</p>
             </div>
         </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: PYQ PRACTICE
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-pyq">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent amber"></div>
-                    <div class="panel-icon" style="color:var(--amber)">📝</div>
-                    <h2 class="panel-title">PYQ Practice</h2>
-                    <p class="panel-sub">Previous Year Questions from GATE · CSIR NET · IIT JAM — with AI-powered solutions</p>
-                </div>
-                <div class="pyq-body">
-                    <div class="pyq-selector">
-                        <button class="pyq-sel-btn active" id="psel-gate" onclick="selectPYQExam('gate')">🏛️ GATE MA</button>
-                        <button class="pyq-sel-btn" id="psel-csirnet" onclick="selectPYQExam('csirnet')">🔬 CSIR NET</button>
-                        <button class="pyq-sel-btn" id="psel-iitjam" onclick="selectPYQExam('iitjam')">⚙️ IIT JAM</button>
-                    </div>
-                    <div class="pyq-topic-bar" id="pyqTopicBar">
-                        <!-- Topics filled by JS -->
-                    </div>
-                    <div class="pyq-chat" id="pyqWindow">
-                        <div class="pyq-welcome" id="pyqWelcome">
-                            <div class="pyq-hero-icon">📝</div>
-                            <h3>Practice Previous Year Questions</h3>
-                            <p>Select an exam above, then choose a topic to get authentic PYQs with complete step-by-step solutions. You can also ask for questions from a specific year.</p>
-                            <div class="pyq-quick-btns">
-                                <button class="pyq-quick" onclick="askPYQ('gate','Real Analysis','2023')">GATE 2023 · Real Analysis</button>
-                                <button class="pyq-quick" onclick="askPYQ('csirnet','Linear Algebra','2023')">CSIR NET · Linear Algebra</button>
-                                <button class="pyq-quick" onclick="askPYQ('iitjam','Calculus','2024')">IIT JAM 2024 · Calculus</button>
-                                <button class="pyq-quick" onclick="askPYQ('gate','Complex Analysis','2022')">GATE 2022 · Complex Analysis</button>
-                                <button class="pyq-quick" onclick="askPYQ('csirnet','Abstract Algebra','2022')">CSIR NET · Abstract Algebra</button>
-                                <button class="pyq-quick" onclick="askPYQ('iitjam','Differential Equations','2023')">IIT JAM · Differential Equations</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-area">
-                        <div class="input-box input-amber">
-                            <textarea id="pyqInput" placeholder="Ask for PYQs e.g. 'GATE 2023 real analysis questions' or 'CSIR NET topology questions with solutions'…" rows="1"
-                                onkeydown="handleKey(event,'pyq')" oninput="autoResize(this)"></textarea>
-                            <button class="send-btn send-amber" onclick="sendPanel('pyq')">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="about-footer">
+            Built with &#10084;&#65039; by <strong>Anupam Nigam</strong> &nbsp;&#183;&nbsp;
+            <a href="https://youtube.com/@pi_nomenal1729?si=yME60ABWMPWBJHMa" target="_blank">YouTube</a> &nbsp;&#183;&nbsp;
+            <a href="https://www.instagram.com/pi_nomenal1729/reels" target="_blank">Instagram</a> &nbsp;&#183;&nbsp;
+            <a href="https://www.linkedin.com/in/anupam-nigam-b2aa2b253" target="_blank">LinkedIn</a>
         </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: GRAPH PLOTTER
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-graph">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent amber"></div>
-                    <div class="panel-icon" style="color:var(--amber)">◎</div>
-                    <h2 class="panel-title">Graph Plotter</h2>
-                    <p class="panel-sub">Plot any function — x^2, sin(x), e^x, ln(x), abs(x), tan(x), and more</p>
-                </div>
-                <div class="graph-body">
-                    <div class="graph-controls">
-                        <div class="graph-input-row">
-                            <div class="fn-input-wrap">
-                                <span class="fn-label">f(x) =</span>
-                                <input type="text" id="functionInput"
-                                    placeholder="x^2  ·  sin(x)  ·  x^3-3*x  ·  e^x  ·  ln(x)"
-                                    class="function-input"
-                                    onkeydown="if(event.key==='Enter') plotFunction()"/>
-                            </div>
-                            <button onclick="plotFunction()" class="plot-btn">Plot →</button>
-                        </div>
-                        <div class="quick-examples">
-                            <span class="eg-label">Quick:</span>
-                            <button class="eg-btn" onclick="quickPlot('x^2')">x²</button>
-                            <button class="eg-btn" onclick="quickPlot('sin(x)')">sin(x)</button>
-                            <button class="eg-btn" onclick="quickPlot('cos(x)')">cos(x)</button>
-                            <button class="eg-btn" onclick="quickPlot('tan(x)')">tan(x)</button>
-                            <button class="eg-btn" onclick="quickPlot('x^3-3*x')">x³−3x</button>
-                            <button class="eg-btn" onclick="quickPlot('1/x')">1/x</button>
-                            <button class="eg-btn" onclick="quickPlot('sqrt(x)')">√x</button>
-                            <button class="eg-btn" onclick="quickPlot('e^x')">eˣ</button>
-                            <button class="eg-btn" onclick="quickPlot('ln(x)')">ln(x)</button>
-                            <button class="eg-btn" onclick="quickPlot('abs(x)')">|x|</button>
-                            <button class="eg-btn" onclick="quickPlot('sin(x)/x')">sinc</button>
-                            <button class="eg-btn" onclick="quickPlot('x^2*sin(x)')">x²sin(x)</button>
-                        </div>
-                    </div>
-                    <div id="plotArea" class="plot-area-box"></div>
-                    <div class="graph-analysis" id="graphAnalysis"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: PROJECTS
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-projects">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent teal"></div>
-                    <div class="panel-icon">◈</div>
-                    <h2 class="panel-title">Mathematics Projects</h2>
-                    <p class="panel-sub">Real-world projects from beginner to advanced — with resources and code</p>
-                </div>
-                <div class="panel-chat" id="projectsWindow">
-                    <div class="panel-welcome">
-                        <div class="pw-icon">◈</div>
-                        <div class="pw-title">Get Project Ideas</div>
-                        <p>Type any mathematics topic below to receive 5 detailed project ideas with applications, tools, and online resources.</p>
-                        <div class="pw-chips">
-                            <button class="chip" onclick="fillPanel('projects','Graph Theory')">Graph Theory</button>
-                            <button class="chip" onclick="fillPanel('projects','Calculus')">Calculus</button>
-                            <button class="chip" onclick="fillPanel('projects','Statistics')">Statistics</button>
-                            <button class="chip" onclick="fillPanel('projects','Number Theory')">Number Theory</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box">
-                        <textarea id="projectsInput" placeholder="e.g. Graph Theory, Calculus, Linear Algebra…" rows="1"
-                            onkeydown="handleKey(event,'projects')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn" onclick="sendPanel('projects')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: LEGENDS
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-mathematician">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent rose"></div>
-                    <div class="panel-icon" style="color:var(--rose)">◉</div>
-                    <h2 class="panel-title">Mathematicians</h2>
-                    <p class="panel-sub">Explore the lives, works and legacy of the greatest mathematical minds</p>
-                </div>
-                <div class="panel-chat" id="mathematicianWindow">
-                    <div class="panel-welcome">
-                        <div class="pw-icon" style="color:var(--rose)">◉</div>
-                        <div class="pw-title">Explore a Mathematician</div>
-                        <p>Type any mathematician's name to get their biography, major contributions, key theorems, famous quotes, and Wikipedia link.</p>
-                        <div class="pw-chips">
-                            <button class="chip chip-rose" onclick="fillPanel('mathematician','Srinivasa Ramanujan')">Ramanujan</button>
-                            <button class="chip chip-rose" onclick="fillPanel('mathematician','Leonhard Euler')">Euler</button>
-                            <button class="chip chip-rose" onclick="fillPanel('mathematician','Emmy Noether')">Emmy Noether</button>
-                            <button class="chip chip-rose" onclick="fillPanel('mathematician','Carl Friedrich Gauss')">Gauss</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box">
-                        <textarea id="mathematicianInput" placeholder="e.g. Srinivasa Ramanujan, Euler, Gauss…" rows="1"
-                            onkeydown="handleKey(event,'mathematician')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-rose" onclick="sendPanel('mathematician')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: APPLICATIONS
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-applications">
-            <div class="panel-wrap">
-                <div class="panel-header">
-                    <div class="panel-accent purple"></div>
-                    <div class="panel-icon" style="color:var(--purple)">◆</div>
-                    <h2 class="panel-title">Real-World Applications</h2>
-                    <p class="panel-sub">Discover how mathematics powers the real world — 12 detailed applications per topic</p>
-                </div>
-                <div class="panel-chat" id="applicationsWindow">
-                    <div class="panel-welcome">
-                        <div class="pw-icon" style="color:var(--purple)">◆</div>
-                        <div class="pw-title">Explore Applications</div>
-                        <p>Type any mathematics topic to see 12 detailed real-world applications with formulas, examples, and reliable resources.</p>
-                        <div class="pw-chips">
-                            <button class="chip chip-purple" onclick="fillPanel('applications','Fourier Transform')">Fourier Transform</button>
-                            <button class="chip chip-purple" onclick="fillPanel('applications','Linear Algebra')">Linear Algebra</button>
-                            <button class="chip chip-purple" onclick="fillPanel('applications','Probability')">Probability</button>
-                            <button class="chip chip-purple" onclick="fillPanel('applications','Differential Equations')">Diff Equations</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="input-area">
-                    <div class="input-box">
-                        <textarea id="applicationsInput" placeholder="e.g. Fourier Transform, Eigenvalues, Probability…" rows="1"
-                            onkeydown="handleKey(event,'applications')" oninput="autoResize(this)"></textarea>
-                        <button class="send-btn send-purple" onclick="sendPanel('applications')">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ══════════════════════════════════════════════
-             TAB: ABOUT
-        ══════════════════════════════════════════════ -->
-        <div class="tab-content" id="tab-about">
-            <div class="about-scroll">
-                <div class="about-hero">
-                    <div class="about-avatar-wrap">
-                        <div class="about-avatar">AN</div>
-                        <div class="about-avatar-ring"></div>
-                    </div>
-                    <h2 class="about-name">Anupam Nigam</h2>
-                    <p class="about-role">Assistant Professor of Mathematics</p>
-                    <div class="social-links">
-                        <a href="https://www.youtube.com/@MathSphere" target="_blank" class="social-btn youtube">
-                            <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                            YouTube
-                        </a>
-                        <a href="https://www.instagram.com/anupam.nigam/" target="_blank" class="social-btn instagram">
-                            <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                            Instagram
-                        </a>
-                        <a href="https://www.linkedin.com/in/anupam-nigam/" target="_blank" class="social-btn linkedin">
-                            <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                            LinkedIn
-                        </a>
-                    </div>
-                    <div class="about-tags">
-                        <span class="tag tag-amber">Quantum Computing</span>
-                        <span class="tag tag-teal">Data Science</span>
-                        <span class="tag tag-rose">Machine Learning</span>
-                        <span class="tag tag-purple">Graph Theory</span>
-                        <span class="tag tag-amber">Cryptography</span>
-                        <span class="tag tag-teal">Fourier Analysis</span>
-                        <span class="tag tag-rose">Number Theory</span>
-                        <span class="tag tag-purple">Content Creator</span>
-                    </div>
-                </div>
-
-                <!-- FEATURE OVERVIEW SECTION -->
-                <div class="features-overview">
-                    <h3 class="fo-title">What MathSphere Can Do</h3>
-                    <div class="fo-grid">
-                        <div class="fo-card" onclick="switchTabByName('intuition')">
-                            <div class="fo-icon" style="color:var(--amber)">💡</div>
-                            <div class="fo-name">Intuition Builder</div>
-                            <p>Story, analogy, and visual thinking before formulas</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('storytelling')">
-                            <div class="fo-icon" style="color:var(--rose)">✍️</div>
-                            <div class="fo-name">Story Mode</div>
-                            <p>The human drama behind every mathematical discovery</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('socratic')">
-                            <div class="fo-icon" style="color:var(--teal)">🦉</div>
-                            <div class="fo-name">Think With Me</div>
-                            <p>Socratic questioning to build genuine understanding</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('concept_map')">
-                            <div class="fo-icon" style="color:var(--purple)">🕸️</div>
-                            <div class="fo-name">Concept Maps</div>
-                            <p>See how all of mathematics connects together</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('daily_puzzle')">
-                            <div class="fo-icon" style="color:var(--amber)">🧩</div>
-                            <div class="fo-name">Daily Puzzles</div>
-                            <p>Pattern thinking puzzles that train mathematical intuition</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('visual_proof')">
-                            <div class="fo-icon" style="color:var(--teal)">👁️</div>
-                            <div class="fo-name">Visual Proofs</div>
-                            <p>See why theorems are true through geometry and visualization</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('career')">
-                            <div class="fo-icon" style="color:var(--rose)">🚀</div>
-                            <div class="fo-name">Career Pathways</div>
-                            <p>Step-by-step roadmaps from math interest to dream career</p>
-                        </div>
-                        <div class="fo-card" onclick="switchTabByName('graph')">
-                            <div class="fo-icon" style="color:var(--amber)">📈</div>
-                            <div class="fo-name">Graph Plotter</div>
-                            <p>Plot and analyze any mathematical function</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="about-cards">
-                    <div class="about-card card-amber">
-                        <div class="card-num">01</div>
-                        <div class="card-label">Who I Am</div>
-                        <p>I am Anupam Nigam, a 27-year-old assistant professor of mathematics passionate about making mathematics beautiful and accessible. I teach linear algebra to data science students, and mathematics to Class 11, 12, and graduation-level students.</p>
-                    </div>
-                    <div class="about-card card-teal">
-                        <div class="card-num">02</div>
-                        <div class="card-label">My Vision</div>
-                        <p>Mathematics is not a subject — it is the language of the universe. MathSphere bridges the gap between content and conceptual clarity. Every student deserves step-by-step understanding, not just answers.</p>
-                    </div>
-                    <div class="about-card card-rose">
-                        <div class="card-num">03</div>
-                        <div class="card-label">What I Do</div>
-                        <p>Beyond teaching, I create mathematics content on YouTube and Instagram, explore quantum computing, work on data science and machine learning, and build educational tools. Deep interests include elliptic curve cryptography and the mathematical foundations of AI.</p>
-                    </div>
-                    <div class="about-card card-purple">
-                        <div class="card-num">04</div>
-                        <div class="card-label">About MathSphere</div>
-                        <p>MathSphere was built with one goal: give every student access to a brilliant mathematics teacher who never sleeps and always explains clearly. It uses state-of-the-art AI with verification to ensure accuracy — because in mathematics, accuracy is everything.</p>
-                    </div>
-                </div>
-                <div class="about-footer">
-                    Built with ❤️ by <strong>Anupam Nigam</strong> &nbsp;·&nbsp;
-                    <a href="https://www.youtube.com/@MathSphere" target="_blank">YouTube</a> &nbsp;·&nbsp;
-                    <a href="https://www.instagram.com/anupam.nigam/" target="_blank">Instagram</a>
-                </div>
-            </div>
-        </div>
+    </div>
+</div>
 
     </main>
 </div><!-- /shell -->
 
-<!-- ══════════════════════════════════════════════
-     RIGHT VIDEO RAIL (inside .app as 3rd flex column)
-══════════════════════════════════════════════ -->
+<!-- VIDEO RAIL -->
 <aside class="video-rail" id="videoRail">
-
-    <!-- Header -->
     <div class="vr-head">
-        <span class="vr-head-icon">🎓</span>
+        <span class="vr-head-icon">&#127891;</span>
         <div>
             <div class="vr-head-title">Math Reels</div>
             <div class="vr-head-sub">by Anupam Nigam</div>
         </div>
     </div>
-
-    <!-- Video frame -->
     <div class="vr-frame">
         <video class="vr-video" id="vrVideo" autoplay muted playsinline loop>
             <source id="vrSource" src="/static/videos/1.mp4" type="video/mp4">
         </video>
         <div class="vr-frame-overlay"></div>
         <div class="vr-counter" id="vrCounter">1 / 10</div>
-        <button class="vr-sound" id="vrSoundBtn" onclick="vrToggleSound()">🔇</button>
+        <button class="vr-sound" id="vrSoundBtn" onclick="vrToggleSound()">&#128263;</button>
         <div class="vr-timer-bar"><div class="vr-timer-fill" id="vrTimerFill"></div></div>
     </div>
-
-    <!-- Next button -->
-    <button class="vr-next-btn" onclick="vrNext()">
-        <span>▶</span> Watch Next
-    </button>
-
-    <!-- Divider -->
+    <button class="vr-next-btn" onclick="vrNext()"><span>&#9654;</span> Watch Next</button>
     <div class="vr-divider"><span>Follow for more</span></div>
-
-    <!-- Social follow buttons -->
     <div class="vr-socials">
         <a href="https://youtube.com/@pi_nomenal1729?si=yME60ABWMPWBJHMa" target="_blank" class="vr-social vr-yt">
             <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
@@ -978,9 +817,7 @@
             LinkedIn
         </a>
     </div>
-
-    <div class="vr-footer-note">🔢 Explore the beauty of mathematics</div>
-
+    <div class="vr-footer-note">&#128290; Explore the beauty of mathematics</div>
 </aside>
 
 </div><!-- /app -->
@@ -988,19 +825,19 @@
 <script src="{{ url_for('static', filename='js/renderer.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-const TAB_LABELS = {
-    math:'Ask Anupam', projects:'Projects', mathematician:'Legends',
-    graph:'Graph Plotter', applications:'Applications', about:'About',
-    intuition:'Intuition Builder', storytelling:'Story Mode',
-    socratic:'Think With Me', concept_map:'Concept Map',
-    daily_puzzle:'Daily Puzzle', visual_proof:'Visual Proofs', career:'Career Paths'
+var TAB_LABELS = {
+    math:'Ask Anupam', intuition:'Intuition Builder', storytelling:'Story Mode',
+    socratic:'Think With Me', concept_map:'Concept Map', career:'Career Paths',
+    exam_hub:'Exam Hub', pyq:'PYQ Practice', daily_puzzle:'Daily Puzzle',
+    visual_proof:'Visual Proofs', graph:'Graph Plotter', projects:'Projects',
+    mathematician:'Legends', applications:'Applications', about:'About'
 };
 
 function toggleSidebar() {
-    const s = document.getElementById('sidebar');
-    const o = document.getElementById('sidebarOverlay');
-    const h = document.getElementById('hamburgerBtn');
-    const open = s.classList.toggle('open');
+    var s = document.getElementById('sidebar');
+    var o = document.getElementById('sidebarOverlay');
+    var h = document.getElementById('hamburgerBtn');
+    var open = s.classList.toggle('open');
     o.classList.toggle('visible', open);
     h.classList.toggle('active', open);
 }
@@ -1010,81 +847,66 @@ function closeSidebar() {
     document.getElementById('hamburgerBtn').classList.remove('active');
 }
 
-function switchTabByName(mode) {
-    const btn = document.querySelector(`.snav-btn[data-tab="${mode}"]`);
-    if (btn) switchTab(mode, btn);
-}
+window.addEventListener('load', function() {
+    var _orig = switchTab;
+    window.switchTab = function(mode, btn) {
+        _orig(mode, btn);
+        var lbl = document.getElementById('headerTabLabel');
+        if (lbl) lbl.textContent = TAB_LABELS[mode] || mode;
+        document.querySelectorAll('.snav-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.tab === mode);
+        });
+        closeSidebar();
+    };
+    renderExamContent();
+    renderPYQTopics();
+});
 
-const _orig = switchTab;
-window.switchTab = function(mode, btn) {
-    _orig(mode, btn);
-    document.getElementById('headerTabLabel').textContent = TAB_LABELS[mode] || mode;
-    document.querySelectorAll('.snav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === mode));
-    closeSidebar();
-};
-
-// Generate puzzle shortcut
 function generatePuzzle(topic) {
-    const inp = document.getElementById('daily_puzzleInput');
-    inp.value = `Generate a mathematical thinking puzzle about: ${topic}`;
+    var inp = document.getElementById('daily_puzzleInput');
+    if (!inp) return;
+    inp.value = 'Generate a mathematical thinking puzzle about: ' + topic;
     sendPanel('daily_puzzle');
 }
 </script>
 
 <script>
-// ── VIDEO RAIL ──────────────────────────────────────────────────
-const VR_TOTAL = 10;
-let vrIdx = 0;
-let vrMuted = true;
-let vrTimer = null;
-const VR_DURATION = 28000;
-
-const vrPlaylist = Array.from({length: VR_TOTAL}, (_, i) => i + 1);
-for (let i = vrPlaylist.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [vrPlaylist[i], vrPlaylist[j]] = [vrPlaylist[j], vrPlaylist[i]];
+var VR_TOTAL = 10, VR_DURATION = 28000, vrIdx = 0, vrMuted = true, vrTimer = null;
+var vrPlaylist = Array.from({length:VR_TOTAL}, function(_,i){return i+1;});
+for (var i = vrPlaylist.length-1; i > 0; i--) {
+    var j = Math.floor(Math.random()*(i+1));
+    var tmp = vrPlaylist[i]; vrPlaylist[i] = vrPlaylist[j]; vrPlaylist[j] = tmp;
 }
-
 function vrLoad(idx) {
-    const video   = document.getElementById('vrVideo');
-    const source  = document.getElementById('vrSource');
-    const counter = document.getElementById('vrCounter');
-    if (!video || !source) return;
-    source.src = `/static/videos/${vrPlaylist[idx]}.mp4`;
-    video.load();
-    video.play().catch(() => {});
-    counter.textContent = `${idx + 1} / ${VR_TOTAL}`;
+    var video = document.getElementById('vrVideo');
+    var src   = document.getElementById('vrSource');
+    var ctr   = document.getElementById('vrCounter');
+    if (!video||!src) return;
+    src.src = '/static/videos/'+vrPlaylist[idx]+'.mp4';
+    video.load(); video.play().catch(function(){});
+    if (ctr) ctr.textContent = (idx+1)+' / '+VR_TOTAL;
     vrResetTimer();
 }
-
-function vrNext() {
-    vrIdx = (vrIdx + 1) % VR_TOTAL;
-    vrLoad(vrIdx);
-}
-
+function vrNext() { vrIdx=(vrIdx+1)%VR_TOTAL; vrLoad(vrIdx); }
 function vrToggleSound() {
-    const video = document.getElementById('vrVideo');
-    const btn   = document.getElementById('vrSoundBtn');
-    if (!video) return;
-    vrMuted = !vrMuted;
-    video.muted = vrMuted;
-    btn.textContent = vrMuted ? '🔇' : '🔊';
+    var v=document.getElementById('vrVideo'), b=document.getElementById('vrSoundBtn');
+    if (!v) return;
+    vrMuted=!vrMuted; v.muted=vrMuted;
+    if (b) b.textContent = vrMuted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
 }
-
 function vrResetTimer() {
     clearTimeout(vrTimer);
-    const fill = document.getElementById('vrTimerFill');
+    var fill = document.getElementById('vrTimerFill');
     if (!fill) return;
-    fill.style.transition = 'none';
-    fill.style.width = '100%';
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        fill.style.transition = `width ${VR_DURATION}ms linear`;
-        fill.style.width = '0%';
-    }));
+    fill.style.transition='none'; fill.style.width='100%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+        fill.style.transition='width '+VR_DURATION+'ms linear';
+        fill.style.width='0%';
+    });});
     vrTimer = setTimeout(vrNext, VR_DURATION);
 }
-
-window.addEventListener('DOMContentLoaded', () => { vrLoad(0); });
+window.addEventListener('DOMContentLoaded', function(){ vrLoad(0); });
 </script>
+
 </body>
 </html>
