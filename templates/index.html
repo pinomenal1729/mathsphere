@@ -77,6 +77,16 @@
             <span class="snav-text">Think with Me</span>
             <span class="snav-badge new">NEW</span>
         </button>
+        <button class="snav-btn" onclick="switchTab('eli10',this)" data-tab="eli10">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+            <span class="snav-text">Explain Simply</span>
+            <span class="snav-badge new">NEW</span>
+        </button>
+        <button class="snav-btn" onclick="switchTab('three_depths',this)" data-tab="three_depths">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+            <span class="snav-text">3 Depths</span>
+            <span class="snav-badge new">NEW</span>
+        </button>
     </nav>
 
     <div class="sidebar-section-label">EXPLORE</div>
@@ -124,6 +134,22 @@
         <button class="snav-btn" onclick="switchTab('applications',this)" data-tab="applications">
             <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
             <span class="snav-text">Applications</span>
+        </button>
+        <button class="snav-btn" onclick="switchTab('formula_sheet',this)" data-tab="formula_sheet">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+            <span class="snav-text">Formula Sheet</span>
+        </button>
+        <button class="snav-btn" onclick="switchTab('mock_test',this)" data-tab="mock_test">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+            <span class="snav-text">Mock Test</span>
+        </button>
+        <button class="snav-btn" onclick="switchTab('wrong',this)" data-tab="wrong">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+            <span class="snav-text">Find My Error</span>
+        </button>
+        <button class="snav-btn" onclick="switchTab('checker',this)" data-tab="checker">
+            <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="snav-text">Check Answer</span>
         </button>
     </nav>
 
@@ -713,6 +739,210 @@
                 <textarea id="applicationsInput" placeholder="e.g. Fourier Transform, Eigenvalues, Probability&#8230;" rows="1"
                     onkeydown="handleKey(event,'applications')" oninput="autoResize(this)"></textarea>
                 <button class="send-btn send-purple" onclick="sendPanel('applications')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: EXPLAIN SIMPLY (ELI10) ══ -->
+<div class="tab-content" id="tab-eli10">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent teal"></div>
+            <div class="panel-icon" style="color:var(--teal)">&#128161;</div>
+            <h2 class="panel-title">Explain Simply</h2>
+            <p class="panel-sub">Any concept explained like you are 10 years old — then bridged to the real mathematics</p>
+        </div>
+        <div class="panel-chat" id="eli10Window">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--teal)">&#128161;</div>
+                <div class="pw-title">Make it Simple</div>
+                <p>Type any mathematics concept — no matter how complex — and get an explanation anyone can understand.</p>
+                <div class="pw-chips">
+                    <button class="chip" onclick="fillPanel('eli10','derivatives')">Derivatives</button>
+                    <button class="chip" onclick="fillPanel('eli10','imaginary numbers')">Imaginary Numbers</button>
+                    <button class="chip" onclick="fillPanel('eli10','infinity')">Infinity</button>
+                    <button class="chip" onclick="fillPanel('eli10','eigenvalues')">Eigenvalues</button>
+                    <button class="chip" onclick="fillPanel('eli10','probability')">Probability</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="eli10Input" placeholder="e.g. eigenvalues, Fourier transform, limits, topology&#8230;" rows="1"
+                    onkeydown="handleKey(event,'eli10')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('eli10')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: THREE DEPTHS ══ -->
+<div class="tab-content" id="tab-three_depths">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent purple"></div>
+            <div class="panel-icon" style="color:var(--purple)">&#9673;</div>
+            <h2 class="panel-title">3 Depths</h2>
+            <p class="panel-sub">Every concept at three levels — one line · full explanation · deep theory</p>
+        </div>
+        <div class="panel-chat" id="three_depthsWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--purple)">&#9673;</div>
+                <div class="pw-title">Choose Your Depth</div>
+                <p>Get any concept explained at the depth you need — from a single sentence to full rigorous theory.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-purple" onclick="fillPanel('three_depths','Fourier Transform')">Fourier Transform</button>
+                    <button class="chip chip-purple" onclick="fillPanel('three_depths','eigenvalues')">Eigenvalues</button>
+                    <button class="chip chip-purple" onclick="fillPanel('three_depths','continuity')">Continuity</button>
+                    <button class="chip chip-purple" onclick="fillPanel('three_depths','determinants')">Determinants</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="three_depthsInput" placeholder="e.g. integration, complex numbers, group theory&#8230;" rows="1"
+                    onkeydown="handleKey(event,'three_depths')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-purple" onclick="sendPanel('three_depths')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: FORMULA SHEET ══ -->
+<div class="tab-content" id="tab-formula_sheet">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent amber"></div>
+            <div class="panel-icon" style="color:var(--amber)">&#128196;</div>
+            <h2 class="panel-title">Formula Sheet</h2>
+            <p class="panel-sub">Complete exam-ready formula sheets with conditions, examples and exam tips</p>
+        </div>
+        <div class="panel-chat" id="formula_sheetWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--amber)">&#128196;</div>
+                <div class="pw-title">Generate Formula Sheet</div>
+                <p>Type any topic to get a complete formula sheet — every formula, its conditions, a quick example, and exam tips.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Integration')">Integration</button>
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Linear Algebra')">Linear Algebra</button>
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Differentiation')">Differentiation</button>
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Probability')">Probability</button>
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Complex Numbers')">Complex Numbers</button>
+                    <button class="chip chip-amber" onclick="fillPanel('formula_sheet','Sequences and Series')">Series</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box input-amber">
+                <textarea id="formula_sheetInput" placeholder="e.g. Integration, Matrices, Probability, Trigonometry&#8230;" rows="1"
+                    onkeydown="handleKey(event,'formula_sheet')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-amber" onclick="sendPanel('formula_sheet')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: MOCK TEST ══ -->
+<div class="tab-content" id="tab-mock_test">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#9998;</div>
+            <h2 class="panel-title">Mock Test</h2>
+            <p class="panel-sub">5 questions · timed practice · complete solutions with scoring</p>
+        </div>
+        <div class="panel-chat" id="mock_testWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--rose)">&#9998;</div>
+                <div class="pw-title">Start a Mock Test</div>
+                <p>Type a topic to get 5 practice questions at mixed difficulty — from straightforward to challenging — with full solutions.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-rose" onclick="fillPanel('mock_test','Real Analysis undergraduate')">Real Analysis</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mock_test','Linear Algebra undergraduate')">Linear Algebra</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mock_test','Calculus Class 12')">Calculus</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mock_test','Complex Analysis GATE level')">Complex Analysis</button>
+                    <button class="chip chip-rose" onclick="fillPanel('mock_test','Differential Equations undergraduate')">Differential Equations</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="mock_testInput" placeholder="e.g. Real Analysis, Calculus, Linear Algebra, Probability&#8230;" rows="1"
+                    onkeydown="handleKey(event,'mock_test')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-rose" onclick="sendPanel('mock_test')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: FIND MY ERROR ══ -->
+<div class="tab-content" id="tab-wrong">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent rose"></div>
+            <div class="panel-icon" style="color:var(--rose)">&#128269;</div>
+            <h2 class="panel-title">Find My Error</h2>
+            <p class="panel-sub">Paste your attempt — get surgical diagnosis of exactly where and why you went wrong</p>
+        </div>
+        <div class="panel-chat" id="wrongWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--rose)">&#128269;</div>
+                <div class="pw-title">Where Did I Go Wrong?</div>
+                <p>Paste the question AND your attempt together. MathSphere will find the exact line of error and show you how to fix it.</p>
+                <div class="pw-chips">
+                    <button class="chip chip-rose" onclick="fillPanel('wrong','Question: Find the integral of x*sin(x). My attempt: I used substitution u=x, then got -cos(x) + C')">Example: Integration error</button>
+                    <button class="chip chip-rose" onclick="fillPanel('wrong','Question: Solve 2x + 3 > 7. My attempt: 2x > 10, so x > 5')">Example: Inequality error</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="wrongInput" placeholder="Paste the question and your attempt together&#8230;" rows="1"
+                    onkeydown="handleKey(event,'wrong')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn send-rose" onclick="sendPanel('wrong')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TAB: CHECK ANSWER ══ -->
+<div class="tab-content" id="tab-checker">
+    <div class="panel-wrap">
+        <div class="panel-header">
+            <div class="panel-accent teal"></div>
+            <div class="panel-icon" style="color:var(--teal)">&#10003;</div>
+            <h2 class="panel-title">Check Answer</h2>
+            <p class="panel-sub">Type the question and your answer — instantly know if you are right and why</p>
+        </div>
+        <div class="panel-chat" id="checkerWindow">
+            <div class="panel-welcome">
+                <div class="pw-icon" style="color:var(--teal)">&#10003;</div>
+                <div class="pw-title">Is My Answer Correct?</div>
+                <p>Type the question and your answer together. Get an instant verdict — correct, incorrect, or partially correct — with full explanation.</p>
+                <div class="pw-chips">
+                    <button class="chip" onclick="fillPanel('checker','Question: differentiate x^3. My answer: 3x^2')">Example: Derivative</button>
+                    <button class="chip" onclick="fillPanel('checker','Question: integral of 2x dx. My answer: x^2 + C')">Example: Integral</button>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-box">
+                <textarea id="checkerInput" placeholder="e.g. Question: find dy/dx of sin(x). My answer: cos(x)&#8230;" rows="1"
+                    onkeydown="handleKey(event,'checker')" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" onclick="sendPanel('checker')">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
             </div>

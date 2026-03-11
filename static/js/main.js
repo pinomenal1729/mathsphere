@@ -15,7 +15,8 @@ var uploadedImage = null;
 var history = {
     math:[], projects:[], mathematician:[], legends:[], applications:[], graph_analysis:[],
     intuition:[], storytelling:[], socratic:[], concept_map:[],
-    daily_puzzle:[], visual_proof:[], career:[], pyq:[]
+    daily_puzzle:[], visual_proof:[], career:[], pyq:[],
+    wrong:[], checker:[], formula_sheet:[], mock_test:[], eli10:[], three_depths:[]
 };
 var MAX_HISTORY        = 15;
 var MAX_MESSAGE_LENGTH = 5000;
@@ -417,7 +418,13 @@ async function sendPanel(mode) {
         daily_puzzle: message,
         visual_proof: 'Explain the visual proof step by step of: ' + message,
         career:       'Give me a complete career pathway guide with roadmap and resources for someone interested in: ' + message,
-        pyq:          message
+        pyq:          message,
+        wrong:        'A student attempted this problem and made a mistake. Diagnose exactly where they went wrong and how to fix it: ' + message,
+        checker:      'Check if this answer is correct and explain why: ' + message,
+        formula_sheet:'Generate a complete exam-ready formula sheet for this topic: ' + message,
+        mock_test:    'Generate a 5-question mock test with complete solutions for this topic: ' + message,
+        eli10:        'Explain this mathematics concept as if I am 10 years old: ' + message,
+        three_depths: 'Explain this concept at three depths — one line, full explanation, and deep theory: ' + message
     };
 
     var fullMessage = prompts[mode] || message;

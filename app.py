@@ -918,6 +918,12 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
         "visual_proof":   VISUAL_PROOF_PROMPT,
         "career":         CAREER_PROMPT,
         "pyq":            PYQ_PROMPT,
+        "wrong":          WRONG_PROMPT,
+        "checker":        CHECKER_PROMPT,
+        "formula_sheet":  FORMULA_SHEET_PROMPT,
+        "mock_test":      MOCK_TEST_PROMPT,
+        "eli10":          ELI10_PROMPT,
+        "three_depths":   THREE_DEPTHS_PROMPT,
     }
 
     # ── Casual messages ────────────────────────────────────────
