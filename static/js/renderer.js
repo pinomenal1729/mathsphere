@@ -119,6 +119,15 @@ const SECTION_ICONS = {
     'HOW IT CHANGED THE WORLD'      : { icon: '🌍', color: 'teal'   },
     'FREE RESOURCES TO START TODAY' : { icon: '📚', color: 'teal'   },
     'WHY IT MATTERS'                : { icon: '🌟', color: 'rose'   },
+    'APPROACH'                      : { icon: '🧭', color: 'teal'   },
+    'QUESTION TEXT'                 : { icon: '📋', color: 'amber'  },
+    'COMMON MISTAKES HERE'          : { icon: '⚠️', color: 'rose'   },
+    'COMMON MISTAKES'               : { icon: '⚠️', color: 'rose'   },
+    'EXAM STRATEGY'                 : { icon: '⚡', color: 'amber'  },
+    'TOPIC SUMMARY'                 : { icon: '📖', color: 'purple' },
+    'RECOMMENDED STUDY ORDER'       : { icon: '🗺️', color: 'teal'   },
+    'OFFICIAL SOURCES'              : { icon: '🔗', color: 'teal'   },
+    'DIFFICULTY AWARENESS'          : { icon: '📊', color: 'teal'   },
 };
 
 const YEAR_COLORS = ['teal', 'amber', 'rose', 'purple'];
@@ -384,7 +393,7 @@ function renderMathContent(raw) {
                 continue;
             }
 
-            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES', 'MATHEMATICS USED', 'TOOLS', 'WHY IT MATTERS'];
+            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES', 'MATHEMATICS USED', 'TOOLS', 'WHY IT MATTERS', 'EXAM STRATEGY', 'KEY CONCEPT TESTED'];
             if (careerFields.indexOf(labelI) !== -1) {
                 if (!careerBuffer) careerBuffer = {};
                 careerBuffer[labelI] = restoreInline(contentI);

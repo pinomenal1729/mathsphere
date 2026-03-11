@@ -1087,9 +1087,10 @@ function askPYQ(exam, topic, year) {
         csirnet: 'CSIR NET Mathematical Sciences',
         iitjam:  'IIT JAM Mathematics'
     };
-    var msg = 'Give me ' + (year === 'recent' ? 'recent' : year) +
-              ' previous year questions from ' + examNames[exam] +
-              ' on the topic: ' + topic + '. Include complete solutions.';
+    var yearStr = (year === 'recent') ? 'recent (last 5 years)' : year;
+    var msg = 'Give me 3 ' + yearStr + ' previous year questions from ' + examNames[exam] +
+              ' on the topic: ' + topic +
+              '. For each question: show the approach first, then complete step-by-step solution, common mistakes, final answer, verification, key concept tested, and exam strategy.';
 
     var inp = document.getElementById('pyqInput');
     if (inp) { inp.value = msg; autoResize(inp); }
