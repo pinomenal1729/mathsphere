@@ -1056,11 +1056,8 @@ def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_h
     full_prompt += message
 
     if image_data:
-        # Decode and re-encode image — normalise to JPEG for maximum compatibility
-        raw_bytes  = base64.b64decode(image_data["data"])
-        mime       = image_data.get("mime_type", image_data.get("media_type", "image/jpeg"))
-
-        # Re-open with PIL to normalise format, then re-encode as JPEG
+        # Decode and normalise image to JPEG using PIL
+        raw_bytes = base64.b64decode(image_data["data"])
         try:
             pil_img = Image.open(io.BytesIO(raw_bytes))
             if pil_img.mode not in ("RGB", "L"):
@@ -1068,16 +1065,15 @@ def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_h
             buf = io.BytesIO()
             pil_img.save(buf, format="JPEG", quality=95)
             clean_bytes = buf.getvalue()
-            mime = "image/jpeg"
         except Exception as e:
             print(f"[Image] PIL normalise failed: {e} — using raw bytes")
             clean_bytes = raw_bytes
 
-        # Use genai.types.Part for reliable image passing
-        image_part = genai.types.Part.from_bytes(data=clean_bytes, mime_type=mime)
+        # Pass image directly as PIL Image object — most compatible with google-genai
+        pil_image = Image.open(io.BytesIO(clean_bytes))
         resp = client.models.generate_content(
             model=model_name,
-            contents=[full_prompt, image_part]
+            contents=[full_prompt, pil_image]
         )
     else:
         resp = client.models.generate_content(model=model_name, contents=full_prompt)
@@ -1226,15 +1222,21 @@ def index():
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    data         = request.json
-    message      = data.get("message", "")
-    mode         = data.get("mode", "math")
-    image_data   = data.get("image", None)
-    chat_history = data.get("history", [])
-    if not message and not image_data:
-        return jsonify({"error": "No input provided"}), 400
-    response, source = get_response(message, mode, image_data, chat_history)
-    return jsonify({"response": response, "source": source})
+    try:
+        data         = request.json
+        message      = data.get("message", "")
+        mode         = data.get("mode", "math")
+        image_data   = data.get("image", None)
+        chat_history = data.get("history", [])
+        if not message and not image_data:
+            return jsonify({"error": "No input provided"}), 400
+        response, source = get_response(message, mode, image_data, chat_history)
+        return jsonify({"response": response, "source": source})
+    except Exception as e:
+        print(f"[ask] Unhandled error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Server error: {str(e)}", "source": "Error"}), 500
 
 if __name__ == "__main__":
     app.run(debug=False)
