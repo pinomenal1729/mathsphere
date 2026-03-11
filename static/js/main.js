@@ -295,7 +295,7 @@ async function sendMessage() {
         return;
     }
 
-    addMessage('user', message || 'Analyzing image…', uploadedImage && uploadedImage.preview);
+    addMessage('user', message || (uploadedImage && uploadedImage.isHandwritten ? '✎ Solving handwritten problem…' : '📷 Analyzing image…'), uploadedImage && uploadedImage.preview);
     input.value        = '';
     input.style.height = 'auto';
 
@@ -308,7 +308,15 @@ async function sendMessage() {
     addTyping('chatWindow');
     setBadge('Thinking…', '#f5a623');
 
-    var fullMessage = message + (difficulty ? '\n[Difficulty: ' + difficulty + ']' : '');
+    // If no text message but image uploaded, use a strong extraction prompt
+    var baseMessage = message;
+    if (!message && imageData) {
+        baseMessage = 'Read this image carefully. Transcribe all mathematics you see, then solve every question completely step by step.';
+    } else if (message && imageData && message.length < 20) {
+        // Short message + image — prepend extraction instruction
+        baseMessage = 'Image contains mathematics. ' + message;
+    }
+    var fullMessage = baseMessage + (difficulty ? '\n[Difficulty: ' + difficulty + ']' : '');
     pushHistory('math', 'user', fullMessage);
 
     try {

@@ -313,9 +313,22 @@ CONFIDENCE: HIGH / MEDIUM / LOW with one precise reason.
 """ + FORMAT_RULES
 
 # ── IMAGE PROMPTS ──────────────────────────────────────────────
-IMAGE_MATH_PROMPT = """You are MathSphere by Anupam Nigam.
-Extract the problem from the image in one line. Solve step by step.
-If the image contains handwritten mathematics, transcribe it precisely before solving.
+IMAGE_MATH_PROMPT = """You are MathSphere by Anupam Nigam — expert at reading mathematical images.
+
+STEP 1 — READ THE IMAGE CAREFULLY:
+- Scan every part of the image. Read ALL text, numbers, symbols, diagrams.
+- If handwritten: read each character carefully. Math handwriting often has: x vs ×, 1 vs l vs I, 0 vs O.
+- If printed: extract every equation, label, and instruction exactly.
+- If multiple questions: number them and solve ALL of them unless told otherwise.
+- State what you see: "I can see: [describe the content]" before solving.
+
+STEP 2 — TRANSCRIBE PRECISELY:
+Write out the complete problem(s) in text form using proper math notation.
+Use $...$ for inline math. Never skip any part of the image.
+
+STEP 3 — SOLVE COMPLETELY:
+Solve every question found. Show all steps. Every equation on its own line as $$...$$
+
 Always end with VERIFICATION: showing you checked the answer.
 Always end with CONFIDENCE: HIGH / MEDIUM / LOW.
 """ + FORMAT_RULES
@@ -817,16 +830,37 @@ def ask_groq(message, system_prompt, chat_history=None):
     return resp.choices[0].message.content
 
 def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_history=None):
-    client       = genai.Client(api_key=GEMINI_API_KEY)
-    context      = build_context(chat_history)
-    full_prompt  = system_prompt + "\n\n"
+    client      = genai.Client(api_key=GEMINI_API_KEY)
+    context     = build_context(chat_history)
+    full_prompt = system_prompt + "\n\n"
     if context:
         full_prompt += "CONVERSATION HISTORY (last few turns for context):\n" + context + "\n---\n\n"
     full_prompt += message
+
     if image_data:
-        image_bytes = base64.b64decode(image_data["data"])
-        image       = Image.open(io.BytesIO(image_bytes))
-        resp        = client.models.generate_content(model=model_name, contents=[full_prompt, image])
+        # Decode and re-encode image — normalise to JPEG for maximum compatibility
+        raw_bytes  = base64.b64decode(image_data["data"])
+        mime       = image_data.get("mime_type", image_data.get("media_type", "image/jpeg"))
+
+        # Re-open with PIL to normalise format, then re-encode as JPEG
+        try:
+            pil_img = Image.open(io.BytesIO(raw_bytes))
+            if pil_img.mode not in ("RGB", "L"):
+                pil_img = pil_img.convert("RGB")
+            buf = io.BytesIO()
+            pil_img.save(buf, format="JPEG", quality=95)
+            clean_bytes = buf.getvalue()
+            mime = "image/jpeg"
+        except Exception as e:
+            print(f"[Image] PIL normalise failed: {e} — using raw bytes")
+            clean_bytes = raw_bytes
+
+        # Use genai.types.Part for reliable image passing
+        image_part = genai.types.Part.from_bytes(data=clean_bytes, mime_type=mime)
+        resp = client.models.generate_content(
+            model=model_name,
+            contents=[full_prompt, image_part]
+        )
     else:
         resp = client.models.generate_content(model=model_name, contents=full_prompt)
     return resp.text
