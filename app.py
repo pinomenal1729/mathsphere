@@ -1028,9 +1028,11 @@ def build_context(chat_history):
 # ── API WRAPPERS ───────────────────────────────────────────────
 def ask_groq(message, system_prompt, chat_history=None):
     client   = Groq(api_key=GROQ_API_KEY)
-    messages = [{"role": "system", "content": system_prompt}]
+    # Truncate system prompt to avoid Groq token limits (6000 token context)
+    truncated_prompt = system_prompt[:3000] if len(system_prompt) > 3000 else system_prompt
+    messages = [{"role": "system", "content": truncated_prompt}]
     if chat_history:
-        recent = chat_history[-8:] if len(chat_history) > 8 else chat_history
+        recent = chat_history[-4:] if len(chat_history) > 4 else chat_history
         for t in recent:
             r = t.get("role", "user")
             c = t.get("content", "")
@@ -1205,23 +1207,27 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
     # ── All other modes ────────────────────────────────────────
     sys_prompt = mode_prompts.get(mode, MATH_PROMPT)
 
-    # Try Groq first (fast, reliable, free) then Gemini
+    # Try Groq first (fast, reliable, free)
     try:
         print(f"[{mode}] Trying Groq...")
-        return ask_groq(message, sys_prompt, chat_history), "Groq"
+        result = ask_groq(message, sys_prompt, chat_history)
+        if result:
+            return result, "Groq"
     except Exception as e:
         print(f"[{mode}] Groq failed: {e}")
 
-    for model_name, label in HARD_MODEL_CASCADE:
+    # Gemini fallback
+    for model_name, label in [("gemini-2.0-flash", "Gemini Flash"), ("gemini-1.5-flash", "Gemini 1.5")]:
         try:
             print(f"[{mode}] Trying {model_name}...")
             text = ask_gemini_model(message, sys_prompt, model_name, chat_history=chat_history)
-            return text, label
+            if text:
+                return text, label
         except Exception as e:
             print(f"[{mode}] {model_name} failed: {e}")
             time.sleep(0.1)
 
-    return "All AI services are currently unavailable. Please try again shortly.", "None"
+    return "All AI services are currently busy. Please try again in a moment.", "None"
 
 
 @app.route("/")
