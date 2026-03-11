@@ -14,13 +14,11 @@ GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
 
 # ── MODEL CASCADES ─────────────────────────────────────────────
 HARD_MODEL_CASCADE = [
-    ("gemini-2.5-pro",   "Gemini 2.5 Pro ✦"),
     ("gemini-2.5-flash", "Gemini 2.5 Flash ✦"),
     ("gemini-2.0-flash", "Gemini 2.0 Flash"),
 ]
 
 MATH_MODEL_CASCADE = [
-    ("gemini-2.5-pro",   "Gemini 2.5 Pro ✦"),
     ("gemini-2.5-flash", "Gemini 2.5 Flash ✦"),
     ("gemini-2.0-flash", "Gemini 2.0 Flash"),
 ]
@@ -1128,7 +1126,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                 return text, label
             except Exception as e:
                 print(f"[Image] {model_name} failed: {e}")
-                time.sleep(0.5)
+                time.sleep(0.1)
         try:
             return ask_groq(
                 f"Student sent image with question: {message}. Solve step by step with verification.",
@@ -1163,7 +1161,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                     return text, label
                 except Exception as e:
                     print(f"[Hard] {model_name} failed: {e}")
-                    time.sleep(0.5)
+                    time.sleep(0.1)
             try:
                 return ask_groq(message, IMO_PROMPT, chat_history), "Groq"
             except Exception as e:
@@ -1189,7 +1187,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                 return text, label
             except Exception as e:
                 print(f"[Math] {model_name} failed: {e}")
-                time.sleep(0.5)
+                time.sleep(0.1)
 
         try:
             return ask_groq(message, enhanced_prompt, chat_history), "Groq"
@@ -1207,7 +1205,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
             return text, label
         except Exception as e:
             print(f"[{mode}] {model_name} failed: {e}")
-            time.sleep(0.5)
+            time.sleep(0.1)
 
     try:
         return ask_groq(message, sys_prompt, chat_history), "Groq"
