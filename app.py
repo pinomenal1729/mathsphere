@@ -1141,6 +1141,13 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
         topic_verify    = get_topic_verification(message)
         enhanced_prompt = MATH_PROMPT + "\n" + topic_verify
 
+        # Try Groq first — fast and reliable
+        try:
+            print("[Math] Trying Groq first...")
+            return ask_groq(message, enhanced_prompt, chat_history), "Groq"
+        except Exception as e:
+            print(f"[Math] Groq failed: {e}")
+
         if is_hard_problem(message):
             hard_prompt = IMO_PROMPT + "\n" + topic_verify
             for model_name, label in HARD_MODEL_CASCADE:
@@ -1198,6 +1205,13 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
     # ── All other modes ────────────────────────────────────────
     sys_prompt = mode_prompts.get(mode, MATH_PROMPT)
 
+    # Try Groq first (fast, reliable, free) then Gemini
+    try:
+        print(f"[{mode}] Trying Groq...")
+        return ask_groq(message, sys_prompt, chat_history), "Groq"
+    except Exception as e:
+        print(f"[{mode}] Groq failed: {e}")
+
     for model_name, label in HARD_MODEL_CASCADE:
         try:
             print(f"[{mode}] Trying {model_name}...")
@@ -1207,16 +1221,16 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
             print(f"[{mode}] {model_name} failed: {e}")
             time.sleep(0.1)
 
-    try:
-        return ask_groq(message, sys_prompt, chat_history), "Groq"
-    except Exception as e:
-        print(f"[{mode}] Groq fallback failed: {e}")
     return "All AI services are currently unavailable. Please try again shortly.", "None"
 
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/ping")
+def ping():
+    return "ok", 200
 
 @app.route("/ask", methods=["POST"])
 def ask():
