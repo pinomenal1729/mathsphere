@@ -38,7 +38,7 @@ function getHistory(mode) { return history[mode] || []; }
 
 // ── TAB ────────────────────────────────────────────────────────
 function switchTab(mode, btn) {
-    document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.snav-btn').forEach(function(b) { b.classList.remove('active'); });
     document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
     if (btn) btn.classList.add('active');
     var el = document.getElementById('tab-' + mode);
@@ -378,7 +378,7 @@ async function sendMessage() {
 }
 
 // ── SEND PANEL ─────────────────────────────────────────────────
-async async function sendPanel(mode) {
+async function sendPanel(mode) {
     var inputEl = document.getElementById(mode + 'Input') ||
                   document.getElementById(mode + 'sInput');
     if (!inputEl) { console.error('Input not found for mode:', mode); return; }
@@ -1130,4 +1130,4 @@ function askPYQ(exam, topic, year) {
 window.addEventListener('DOMContentLoaded', function() {
     renderExamContent();
     renderPYQTopics();
-});// cache-bust
+});
