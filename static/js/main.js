@@ -19,6 +19,14 @@ var history = {
     wrong:[], checker:[], formula_sheet:[], mock_test:[], eli10:[], three_depths:[]
 };
 var MAX_HISTORY        = 15;
+
+// ── KEEP ALIVE — ping server every 10 min to prevent Render spin-down ──
+function keepAlive() {
+    fetch('/ping').catch(() => {});
+}
+setInterval(keepAlive, 10 * 60 * 1000);
+keepAlive();
+
 var MAX_MESSAGE_LENGTH = 5000;
 
 function pushHistory(mode, role, content) {
@@ -321,9 +329,12 @@ async function sendMessage() {
     pushHistory('math', 'user', fullMessage);
 
     try {
+        var ctrl2 = new AbortController();
+        var timer2 = setTimeout(() => ctrl2.abort(), 90000);
         var res = await fetch('/ask', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal:  ctrl2.signal,
             body:    JSON.stringify({
                 message: fullMessage,
                 mode:    'math',
@@ -331,6 +342,7 @@ async function sendMessage() {
                 history: getHistory('math').slice(0, -1)
             })
         });
+        clearTimeout(timer2);
 
         if (res.status === 429) {
             removeTyping('chatWindow');
@@ -366,7 +378,7 @@ async function sendMessage() {
 }
 
 // ── SEND PANEL ─────────────────────────────────────────────────
-async function sendPanel(mode) {
+async async function sendPanel(mode) {
     var inputEl = document.getElementById(mode + 'Input') ||
                   document.getElementById(mode + 'sInput');
     if (!inputEl) { console.error('Input not found for mode:', mode); return; }
@@ -430,16 +442,20 @@ async function sendPanel(mode) {
     var fullMessage = prompts[mode] || message;
     pushHistory(mode, 'user', fullMessage);
 
+    var controller = new AbortController();
+    var timer = setTimeout(() => controller.abort(), 90000);
     try {
         var res = await fetch('/ask', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal:  controller.signal,
             body:    JSON.stringify({
                 message: fullMessage,
                 mode:    mode,
                 history: getHistory(mode).slice(0, -1)
             })
         });
+        clearTimeout(timer);
 
         if (res.status === 429) {
             removeTypingPanel(win.id);
@@ -479,11 +495,13 @@ async function sendPanel(mode) {
         setBadge((data.source || 'AI') + ' ✓', '#22c55e');
 
     } catch(e) {
+        clearTimeout(timer);
         removeTypingPanel(win.id);
         console.error('Panel send error:', e);
+        var msg = e.name === 'AbortError' ? 'Request timed out. Server may be waking up — please try again in 10 seconds.' : 'Connection error: ' + e.message;
         var e3       = document.createElement('div');
         e3.className = 'panel-response';
-        e3.innerHTML = renderErrorMessage('Connection error. Please try again.');
+        e3.innerHTML = renderErrorMessage(msg);
         win.appendChild(e3);
         win.scrollTop = win.scrollHeight;
         setBadge('Error', '#ef4444');
