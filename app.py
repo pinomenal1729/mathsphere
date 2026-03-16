@@ -1257,4 +1257,5 @@ def ask():
         return jsonify({"error": f"Server error: {str(e)}", "source": "Error"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)
