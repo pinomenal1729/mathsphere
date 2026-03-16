@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MathSphere — Learn Maths with Anupam</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script>
     MathJax = {
         tex: {
             inlineMath:  [['$','$'],['\\(','\\)']],
-            displayMath: [['$$','$$'],['\\[','\\]']],
+            displayMath: [['
+$$
+','
+$$
+'],['\$$','\$$']],
             processEscapes: true,
             processEnvironments: true
         },
@@ -23,24 +27,6 @@
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 </head>
 <body>
-
-<div class="math-bg" aria-hidden="true">
-    <span class="math-sym" style="--x:5%;--y:10%;--s:2.2rem;--d:0s;--dur:18s">&#8721;</span>
-    <span class="math-sym" style="--x:15%;--y:70%;--s:1.6rem;--d:3s;--dur:22s">&#960;</span>
-    <span class="math-sym" style="--x:25%;--y:30%;--s:2.8rem;--d:1.5s;--dur:16s">&#8747;</span>
-    <span class="math-sym" style="--x:35%;--y:80%;--s:1.4rem;--d:5s;--dur:20s">&#8730;</span>
-    <span class="math-sym" style="--x:45%;--y:15%;--s:2rem;--d:2s;--dur:25s">&#8734;</span>
-    <span class="math-sym" style="--x:55%;--y:60%;--s:1.8rem;--d:7s;--dur:19s">&#916;</span>
-    <span class="math-sym" style="--x:65%;--y:25%;--s:2.4rem;--d:0.5s;--dur:21s">&#8711;</span>
-    <span class="math-sym" style="--x:75%;--y:75%;--s:1.5rem;--d:4s;--dur:17s">&#952;</span>
-    <span class="math-sym" style="--x:85%;--y:40%;--s:2rem;--d:6s;--dur:23s">&#955;</span>
-    <span class="math-sym" style="--x:92%;--y:85%;--s:1.7rem;--d:2.5s;--dur:18s">&#945;</span>
-    <span class="math-sym" style="--x:8%;--y:50%;--s:1.3rem;--d:8s;--dur:24s">&#946;</span>
-    <span class="math-sym" style="--x:50%;--y:90%;--s:2.2rem;--d:1s;--dur:20s">&#966;</span>
-    <span class="math-sym" style="--x:30%;--y:5%;--s:1.9rem;--d:9s;--dur:16s">&#8706;</span>
-    <span class="math-sym" style="--x:70%;--y:55%;--s:1.4rem;--d:3.5s;--dur:22s">&#956;</span>
-    <span class="math-sym" style="--x:90%;--y:15%;--s:2.6rem;--d:6.5s;--dur:19s">&#937;</span>
-</div>
 
 <div class="app">
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -55,6 +41,7 @@
         </div>
     </div>
 
+    <div class="sidebar-body">
     <div class="sidebar-section-label">LEARN</div>
     <nav class="sidebar-nav">
         <button class="snav-btn active" onclick="switchTab('math',this)" data-tab="math">
@@ -108,12 +95,12 @@
         <button class="snav-btn" onclick="switchTab('exam_hub',this)" data-tab="exam_hub">
             <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
             <span class="snav-text">Exam Hub</span>
-            <span class="snav-badge new" style="background:var(--rose);color:#fff">HOT</span>
+            <span class="snav-badge hot">HOT</span>
         </button>
         <button class="snav-btn" onclick="switchTab('pyq',this)" data-tab="pyq">
             <span class="snav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <span class="snav-text">PYQ Practice</span>
-            <span class="snav-badge new" style="background:var(--rose);color:#fff">HOT</span>
+            <span class="snav-badge hot">HOT</span>
         </button>
     </nav>
 
@@ -177,8 +164,10 @@
             LinkedIn
         </a>
     </div>
+    </div><!-- /sidebar-body -->
+
     <div class="sidebar-footer">
-        <div class="api-badge" id="apiBadge">&#9679; Ready</div>
+        <div class="api-badge" id="apiBadge">Ready</div>
     </div>
 </aside>
 
@@ -1062,11 +1051,27 @@
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
 var TAB_LABELS = {
-    math:'Ask Anupam', intuition:'Intuition Builder', storytelling:'Story Mode',
-    socratic:'Think With Me', concept_map:'Concept Map', career:'Career Paths',
-    exam_hub:'Exam Hub', pyq:'PYQ Practice', daily_puzzle:'Daily Puzzle',
-    visual_proof:'Visual Proofs', graph:'Graph Plotter', projects:'Projects',
-    mathematician:'Legends', applications:'Applications', about:'About'
+    math:         'Ask Anupam',
+    intuition:    'Intuition Builder',
+    storytelling: 'Story Mode',
+    socratic:     'Think With Me',
+    concept_map:  'Concept Map',
+    career:       'Career Paths',
+    exam_hub:     'Exam Hub',
+    pyq:          'PYQ Practice',
+    daily_puzzle: 'Daily Puzzle',
+    visual_proof: 'Visual Proofs',
+    graph:        'Graph Plotter',
+    projects:     'Projects',
+    legends:      'Legends',
+    applications: 'Applications',
+    formula_sheet:'Formula Sheet',
+    mock_test:    'Mock Test',
+    wrong:        'Find My Error',
+    checker:      'Check Answer',
+    eli10:        'Explain Simply',
+    three_depths: '3 Depths',
+    about:        'About'
 };
 
 function toggleSidebar() {

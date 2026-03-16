@@ -8,6 +8,7 @@
 //  5. sendPanel window lookup handles pyq nested inside .pyq-body
 //  6. isQuotaError / renderErrorMessage defined locally too
 //  7. MAX_MESSAGE_LENGTH validated client-side
+//  8. Plotly theme updated to match new CSS palette
 // ══════════════════════════════════════════════════════════════
 
 // ── STATE ──────────────────────────────────────────────────────
@@ -98,7 +99,7 @@ function handleImageUpload(event) {
         var dataUrl = e.target.result;
         uploadedImage = {
             data:      dataUrl.split(',')[1],
-            mime_type: file.type,   // FIX: mime_type matches app.py process_image()
+            mime_type: file.type,
             preview:   dataUrl
         };
         var preview    = document.getElementById('previewImg');
@@ -152,7 +153,6 @@ function handleHandwrittenUpload(event) {
             previewBox.classList.remove('hidden');
             previewBox.querySelector('.preview-label').textContent = '✎ Handwritten math attached';
         }
-        // Pre-fill the input with a helpful prompt
         var inp = document.getElementById('userInput');
         if (inp && !inp.value.trim()) {
             inp.value = 'Solve this handwritten problem step by step';
@@ -317,12 +317,10 @@ async function sendMessage() {
     addTyping('chatWindow');
     setBadge('Thinking…', '#f5a623');
 
-    // If no text message but image uploaded, use a strong extraction prompt
     var baseMessage = message;
     if (!message && imageData) {
         baseMessage = 'Read this image carefully. Transcribe all mathematics you see, then solve every question completely step by step.';
     } else if (message && imageData && message.length < 20) {
-        // Short message + image — prepend extraction instruction
         baseMessage = 'Image contains mathematics. ' + message;
     }
     var fullMessage = baseMessage + (difficulty ? '\n[Difficulty: ' + difficulty + ']' : '');
@@ -391,7 +389,6 @@ async function sendPanel(mode) {
         return;
     }
 
-    // FIX: pyqWindow is inside .pyq-body — try multiple id patterns
     var winIds = [
         mode + 'Window',
         mode + 'sWindow',
@@ -565,7 +562,7 @@ function clearChat() {
         '</select>' +
         '<button class="clear-btn" onclick="clearChat()">Clear Chat</button>' +
         '</div></div></div>';
-    setBadge('● Ready', '#22c55e');
+    setBadge('Ready', '#22c55e');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -574,10 +571,10 @@ function clearChat() {
 function buildEvaluator(raw) {
     var expr = raw.trim()
         .replace(/\^/g,       '**')
-        .replace(/(\d)(x)/gi, '$1*$2')
-        .replace(/(\d)\(/g,   '$1*(')
-        .replace(/\)(x)/gi,   ')*$1')
-        .replace(/\)(\d)/g,   ')*$1');
+        .replace(/(\d)(x)/gi, '\$1*\$2')
+        .replace(/(\d)\(/g,   '\$1*(')
+        .replace(/\)(x)/gi,   ')*\$1')
+        .replace(/\)(\d)/g,   ')*\$1');
 
     var fns = [
         ['log10','Math.log10'],['log2','Math.log2'],
@@ -667,14 +664,38 @@ async function plotFunction() {
             name: 'f(x) = ' + raw, connectgaps: false,
             hovertemplate: 'x = %{x:.3f}<br>f(x) = %{y:.4f}<extra></extra>'
         }], {
-            paper_bgcolor: '#06060f', plot_bgcolor: '#0a0a18',
-            font: { color: '#8888b0', size: 11, family: 'DM Sans' },
+            paper_bgcolor: '#0d0d10',
+            plot_bgcolor:  '#080809',
+            font: { color: '#8a8a9a', size: 11, family: 'Geist, sans-serif' },
             margin: { t: 44, r: 24, b: 52, l: 58 },
-            title: { text: 'f(x) = ' + raw, font: { color: '#00d4aa', size: 14, family: 'Syne' }, x: 0.5, xanchor: 'center' },
-            xaxis: { gridcolor: '#161628', zerolinecolor: '#f5a623', zerolinewidth: 1.5, linecolor: '#1e1e3a', tickfont: { color: '#44446a', size: 10 }, title: { text: 'x', font: { color: '#44446a' } } },
-            yaxis: { gridcolor: '#161628', zerolinecolor: '#f5a623', zerolinewidth: 1.5, linecolor: '#1e1e3a', tickfont: { color: '#44446a', size: 10 }, title: { text: 'f(x)', font: { color: '#44446a' } }, range: [yMin - yPad, yMax + yPad] },
+            title: {
+                text: 'f(x) = ' + raw,
+                font: { color: '#00d4aa', size: 14, family: 'Geist, sans-serif' },
+                x: 0.5, xanchor: 'center'
+            },
+            xaxis: {
+                gridcolor:     'rgba(255,255,255,0.04)',
+                zerolinecolor: 'rgba(255,255,255,0.08)',
+                zerolinewidth: 1.5,
+                linecolor:     'rgba(255,255,255,0.06)',
+                tickfont:      { color: '#8a8a9a', size: 10 },
+                title:         { text: 'x', font: { color: '#8a8a9a' } }
+            },
+            yaxis: {
+                gridcolor:     'rgba(255,255,255,0.04)',
+                zerolinecolor: 'rgba(255,255,255,0.08)',
+                zerolinewidth: 1.5,
+                linecolor:     'rgba(255,255,255,0.06)',
+                tickfont:      { color: '#8a8a9a', size: 10 },
+                title:         { text: 'f(x)', font: { color: '#8a8a9a' } },
+                range:         [yMin - yPad, yMax + yPad]
+            },
             hovermode: 'x unified',
-            hoverlabel: { bgcolor: '#0a0a18', bordercolor: '#00d4aa', font: { color: '#eeeef8', size: 12, family: 'JetBrains Mono' } }
+            hoverlabel: {
+                bgcolor:     '#0d0d10',
+                bordercolor: '#00d4aa',
+                font: { color: '#eeeef8', size: 12, family: 'Geist Mono, monospace' }
+            }
         }, {
             responsive: true, displayModeBar: true, displaylogo: false,
             modeBarButtonsToRemove: ['toImage','sendDataToCloud','lasso2d','select2d']
@@ -1105,7 +1126,6 @@ function renderPYQTopics() {
     }).join('');
 }
 
-// FIX: setTimeout ensures inp.value is set before sendPanel reads it
 function askPYQ(exam, topic, year) {
     var examNames = {
         gate:    'GATE Mathematics (MA)',
