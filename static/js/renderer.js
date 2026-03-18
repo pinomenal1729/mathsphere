@@ -1,8 +1,9 @@
 // ══════════════════════════════════════════════════════════════
-//  MATHSPHERE — VISUAL RENDERER  (Corrected)
+//  MATHSPHERE — VISUAL RENDERER  (Math-safe edition)
+//  FIX: esc() is NEVER called on content that may contain $...$
+//       Only labels, keys, and known-safe strings get escaped.
 // ══════════════════════════════════════════════════════════════
 
-// ── SECTION ICON MAP ───────────────────────────────────────────
 const SECTION_ICONS = {
     'CAREER LANDSCAPE'              : { icon: '🌍', color: 'teal'   },
     'CAREER NAME'                   : { icon: '💼', color: 'amber'  },
@@ -48,12 +49,12 @@ const SECTION_ICONS = {
     'HOW IT CHANGED THE WORLD'      : { icon: '🌍', color: 'teal'   },
     'WHERE IT LIVES TODAY'          : { icon: '📱', color: 'teal'   },
     'THE OPEN MYSTERY'              : { icon: '🌌', color: 'purple' },
-    'WHAT I NOTICE YOU\'RE THINKING'       : { icon: '👁️', color: 'teal'   },
-    'THE QUESTION BENEATH YOUR QUESTION'   : { icon: '❓', color: 'purple' },
-    'THINK ABOUT THIS FIRST'               : { icon: '🤔', color: 'amber'  },
-    'A RELATED PATTERN TO NOTICE'          : { icon: '🔗', color: 'teal'   },
-    'WHEN YOU\'VE WRESTLED WITH THAT'      : { icon: '💪', color: 'rose'   },
-    'MATHEMATICAL THINKING HABIT THIS BUILDS': { icon: '🧠', color: 'purple' },
+    'WHAT I NOTICE YOU\'RE THINKING'        : { icon: '👁️', color: 'teal'   },
+    'THE QUESTION BENEATH YOUR QUESTION'    : { icon: '❓', color: 'purple' },
+    'THINK ABOUT THIS FIRST'                : { icon: '🤔', color: 'amber'  },
+    'A RELATED PATTERN TO NOTICE'           : { icon: '🔗', color: 'teal'   },
+    'WHEN YOU\'VE WRESTLED WITH THAT'       : { icon: '💪', color: 'rose'   },
+    'MATHEMATICAL THINKING HABIT THIS BUILDS':{ icon: '🧠', color: 'purple' },
     'CENTRAL CONCEPT'               : { icon: '🎯', color: 'amber'  },
     'PREREQUISITE CONCEPTS'         : { icon: '⬅️', color: 'teal'   },
     'CORE SUB-CONCEPTS'             : { icon: '🔗', color: 'purple' },
@@ -114,12 +115,7 @@ const SECTION_ICONS = {
     'VISUAL HINT'                   : { icon: '👁️', color: 'teal'   },
     'KEY CONCEPT'                   : { icon: '💎', color: 'amber'  },
     'VISUAL INSIGHT'                : { icon: '🖼️', color: 'purple' },
-    'CAREER NAME'                   : { icon: '💼', color: 'amber'  },
     'TOP 5 CAREER PATHS'            : { icon: '🚀', color: 'teal'   },
-    'HOW IT CHANGED THE WORLD'      : { icon: '🌍', color: 'teal'   },
-    'FREE RESOURCES TO START TODAY' : { icon: '📚', color: 'teal'   },
-    'WHY IT MATTERS'                : { icon: '🌟', color: 'rose'   },
-    'APPROACH'                      : { icon: '🧭', color: 'teal'   },
     'QUESTION TEXT'                 : { icon: '📋', color: 'amber'  },
     'COMMON MISTAKES HERE'          : { icon: '⚠️', color: 'rose'   },
     'COMMON MISTAKES'               : { icon: '⚠️', color: 'rose'   },
@@ -156,8 +152,7 @@ const SECTION_ICONS = {
     'CONNECTING THOUGHT'            : { icon: '🔗', color: 'rose'   },
     'WHICH DEPTH IS RIGHT FOR YOU'  : { icon: '🎯', color: 'teal'   },
     'THE BIG IDEA'                  : { icon: '💡', color: 'amber'  },
-    'THE STORY'                     : { icon: '📖', color: 'rose'   },
-    "WHY IT'S COOL"                : { icon: '🌟', color: 'teal'   },
+    "WHY IT'S COOL"                 : { icon: '🌟', color: 'teal'   },
     'THE GROWN-UP VERSION'          : { icon: '∑',  color: 'purple' },
     'REMEMBER IT LIKE THIS'         : { icon: '🧠', color: 'amber'  },
     'INSTRUCTIONS'                  : { icon: '📋', color: 'teal'   },
@@ -168,7 +163,9 @@ const SECTION_ICONS = {
 const YEAR_COLORS = ['teal', 'amber', 'rose', 'purple'];
 
 // ── HELPERS ────────────────────────────────────────────────────
-function esc(str) {
+
+// escLabel: ONLY for labels, keys, titles — strings that never contain math
+function escLabel(str) {
     return String(str)
         .replace(/&/g,  '&amp;')
         .replace(/</g,  '&lt;')
@@ -176,12 +173,21 @@ function esc(str) {
         .replace(/"/g,  '&quot;');
 }
 
+// safeContent: for body text that MAY contain $...$ or $$...$$ math.
+// Escapes & < > to prevent HTML injection, but PRESERVES $ \ { }
+// so MathJax can render inline and display math correctly.
+function safeContent(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function linkify(text) {
     return String(text).replace(
         /(https?:\/\/[^\s<>"&]+)/g,
         function(url) {
-            var clean = url.replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
-            // Truncate very long URLs for display
+            var clean   = url.replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
             var display = clean.length > 60 ? clean.substring(0, 57) + '...' : clean;
             return '<a href="' + url +
                 '" target="_blank" rel="noopener" class="vr-resource-link">' +
@@ -212,13 +218,13 @@ function renderErrorMessage(text) {
     if (t.includes('quota') || t.includes('all ai services')) {
         return '<div class="error-bubble quota-error">' +
             '<div class="error-title">⚠ Service Temporarily Unavailable</div>' +
-            '<div class="error-body">' + esc(text) + '</div>' +
+            '<div class="error-body">' + escLabel(text) + '</div>' +
             '<div class="error-fix">The free API quota may be exhausted. ' +
             'Please try again later.</div></div>';
     }
     return '<div class="error-bubble">' +
         '<div class="error-title">⚠ Error</div>' +
-        '<div class="error-body">' + esc(text) + '</div></div>';
+        '<div class="error-body">' + escLabel(text) + '</div></div>';
 }
 
 function getSectionMeta(label) {
@@ -253,16 +259,17 @@ function careerCard(title, fields) {
         var k    = keys[i];
         var v    = fields[k];
         var meta = getSectionMeta(k);
+        // v already has safeContent+restore applied — contains live math
         rows += '<div class="vr-career-row">' +
             '<span class="vr-career-row-icon">' + meta.icon + '</span>' +
-            '<span class="vr-career-row-label">' + esc(k) + '</span>' +
-            '<span class="vr-career-row-val">' + linkify(esc(v)) + '</span>' +
+            '<span class="vr-career-row-label">' + escLabel(k) + '</span>' +
+            '<span class="vr-career-row-val">' + linkify(v) + '</span>' +
             '</div>';
     }
     return '<div class="vr-career-card vr-career-' + color + '">' +
         '<div class="vr-career-title">' +
         '<span class="vr-career-num">' + _careerIdx + '</span>' +
-        esc(title) + '</div>' +
+        escLabel(title) + '</div>' +
         '<div class="vr-career-rows">' + rows + '</div>' +
         '</div>';
 }
@@ -272,9 +279,10 @@ function roadmapFlow(steps) {
     var html   = '<div class="vr-roadmap">';
     for (var i = 0; i < steps.length; i++) {
         var color = colors[i % colors.length];
+        // steps already have safeContent+restore applied
         html += '<div class="vr-roadmap-step vr-rm-' + color + '">' +
             '<div class="vr-rm-num">' + (i + 1) + '</div>' +
-            '<div class="vr-rm-text">' + linkify(esc(steps[i])) + '</div>' +
+            '<div class="vr-rm-text">' + linkify(steps[i]) + '</div>' +
             '</div>';
         if (i < steps.length - 1) html += '<div class="vr-roadmap-arrow">↓</div>';
     }
@@ -298,9 +306,10 @@ function yearCard(label, content, idx) {
     var color = YEAR_COLORS[idx % YEAR_COLORS.length];
     var icons = ['🌱', '🌿', '🌳', '🚀'];
     var icon  = icons[idx % icons.length];
+    // content already has safeContent+restore applied
     return '<div class="vr-year-card vr-year-' + color + '">' +
-        '<div class="vr-year-badge">' + icon + ' ' + esc(label) + '</div>' +
-        '<div class="vr-year-body">' + linkify(esc(content)) + '</div>' +
+        '<div class="vr-year-badge">' + icon + ' ' + escLabel(label) + '</div>' +
+        '<div class="vr-year-body">' + linkify(content) + '</div>' +
         '</div>';
 }
 
@@ -313,12 +322,12 @@ function renderMathContent(raw) {
     _careerIdx = 0;
 
     // ── Step 1: Normalise LaTeX delimiters ─────────────────────
-    // FIX: correct regex for \[...\] and \(...\)
     var text = raw
         .replace(/\\\[/g, '$$').replace(/\\\]/g, '$$')
         .replace(/\\\(/g, '$' ).replace(/\\\)/g, '$' );
 
-    // ── Step 2: Protect math with tokens ──────────────────────
+    // ── Step 2: Protect math blocks with tokens ────────────────
+    // Tokens store the RAW math — no HTML escaping applied.
     var dispBlocks   = [];
     var inlineBlocks = [];
 
@@ -331,6 +340,8 @@ function renderMathContent(raw) {
         return '\x00I' + (inlineBlocks.length - 1) + '\x00';
     });
 
+    // restoreInline: injects raw math back AFTER safeContent has run.
+    // This means $ \ { } in math are NEVER escaped.
     function restoreInline(s) {
         for (var i = 0; i < inlineBlocks.length; i++) {
             s = s.split('\x00I' + i + '\x00').join(inlineBlocks[i]);
@@ -341,14 +352,13 @@ function renderMathContent(raw) {
         return s;
     }
 
-    // ── Step 3: Pre-process — normalise so every section header gets its own paragraph ──
-    // AI often returns sections separated by single \n — force double \n before ALL-CAPS headers
+    // ── Step 3: Normalise paragraph breaks ────────────────────
     text = text
         .replace(/([^\n])\n([A-Z][A-Z0-9 \/\'\-·—]{2,70}:)/g, '$1\n\n$2')
         .replace(/([^\n])\n(\d+[.)] )/g, '$1\n\n$2')
         .replace(/([^\n])\n([-•·▸] )/g, '$1\n\n$2');
 
-    // ── Step 3: Split into paragraphs ─────────────────────────
+    // ── Step 4: Split into paragraphs ─────────────────────────
     var rawParas = text.split(/\n{2,}/);
 
     var outputBlocks = [];
@@ -374,29 +384,25 @@ function renderMathContent(raw) {
         inRoadmap = false;
     }
 
-    // ── Step 4: Parse each paragraph ──────────────────────────
+    // ── Step 5: Parse each paragraph ──────────────────────────
     for (var pi = 0; pi < rawParas.length; pi++) {
-        var para     = rawParas[pi].trim();
+        var para = rawParas[pi].trim();
         if (!para) continue;
 
-        var restored = restoreInline(para);
-
         // ── Display math block ────────────────────────────────
-        // FIX: check tokenised form \x00D or restored $$
         if (/^\x00D\d+\x00$/.test(para.trim())) {
             flushCareer(); flushRoadmap();
-            outputBlocks.push({ type: 'formula', content: restored });
+            outputBlocks.push({ type: 'formula', content: restoreInline(para) });
             continue;
         }
-        // Also catch restored $$ blocks that come through as paragraphs
-        var trimR = restored.trim();
+        var trimR = restoreInline(para).trim();
         if (trimR.startsWith('$$') && trimR.endsWith('$$') && trimR.length > 4) {
             flushCareer(); flushRoadmap();
-            outputBlocks.push({ type: 'formula', content: restored });
+            outputBlocks.push({ type: 'formula', content: trimR });
             continue;
         }
 
-        // ── ALL-CAPS header only (no content) ─────────────────
+        // ── ALL-CAPS header only ───────────────────────────────
         var headerOnlyMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·—]{2,80}):\s*$/);
         if (headerOnlyMatch) {
             var labelH = headerOnlyMatch[1].trim();
@@ -416,47 +422,54 @@ function renderMathContent(raw) {
             continue;
         }
 
-        // ── ALL-CAPS header + content on same line ─────────────
+        // ── ALL-CAPS header + inline content ───────────────────
         var inlineHeaderMatch = para.match(/^([A-Z][A-Z0-9\s\/\'\-·—]{2,70}):\s+([\s\S]+)$/);
         if (inlineHeaderMatch && para.indexOf('\n') === -1) {
-            var labelI   = inlineHeaderMatch[1].trim();
-            var contentI = inlineHeaderMatch[2].trim();
+            var labelI      = inlineHeaderMatch[1].trim();
+            var rawContentI = inlineHeaderMatch[2].trim();
+            // THE SAFE ORDER: safeContent first, then restore math tokens
+            var contentI = restoreInline(safeContent(rawContentI));
 
             if (/^YEAR\s+(\d+\+?)/i.test(labelI)) {
                 flushCareer(); flushRoadmap();
-                outputBlocks.push({ type: 'year-card', label: labelI, content: restoreInline(contentI), idx: yearIdx++ });
+                outputBlocks.push({ type: 'year-card', label: labelI, content: contentI, idx: yearIdx++ });
                 continue;
             }
 
-            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES', 'MATHEMATICS USED', 'TOOLS', 'WHY IT MATTERS', 'EXAM STRATEGY', 'KEY CONCEPT TESTED'];
+            var careerFields = ['ROLE', 'SALARY RANGE', 'DEMAND', 'INDUSTRIES',
+                                'MATHEMATICS USED', 'TOOLS', 'WHY IT MATTERS',
+                                'EXAM STRATEGY', 'KEY CONCEPT TESTED'];
             if (careerFields.indexOf(labelI) !== -1) {
                 if (!careerBuffer) careerBuffer = {};
-                careerBuffer[labelI] = restoreInline(contentI);
+                careerBuffer[labelI] = contentI;
                 continue;
             }
 
             if (labelI === 'CAREER NAME' || /^CAREER\s+\d/.test(labelI)) {
                 flushCareer(); flushRoadmap();
-                careerTitle  = restoreInline(contentI);
+                careerTitle  = contentI;
                 careerBuffer = {};
                 continue;
             }
 
             if (/FIRST STEP/i.test(labelI)) {
                 flushCareer(); flushRoadmap();
-                outputBlocks.push({ type: 'first-step', content: restoreInline(contentI) });
+                outputBlocks.push({ type: 'first-step', content: contentI });
                 continue;
             }
 
             flushCareer();
-            outputBlocks.push({ type: 'inline-section', label: labelI, content: restoreInline(contentI) });
+            outputBlocks.push({ type: 'inline-section', label: labelI, content: contentI });
             continue;
         }
 
         // ── Numbered list ──────────────────────────────────────
         var lines = para.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
         if (lines.length >= 1 && lines.every(function(l) { return /^\d+[.)]\s/.test(l); })) {
-            var items = lines.map(function(l) { return restoreInline(l.replace(/^\d+[.)]\s+/, '')); });
+            var items = lines.map(function(l) {
+                var rawItem = l.replace(/^\d+[.)]\s+/, '');
+                return restoreInline(safeContent(rawItem));
+            });
             flushCareer();
             if (inRoadmap) {
                 for (var ri = 0; ri < items.length; ri++) roadmapSteps.push(items[ri]);
@@ -469,14 +482,14 @@ function renderMathContent(raw) {
         // ── Step N header ──────────────────────────────────────
         if (/^(Step|Stage|STEP)\s+\d+\s*[—–:\-]/i.test(para)) {
             flushCareer(); flushRoadmap();
-            outputBlocks.push({ type: 'step-header', content: restoreInline(para) });
+            outputBlocks.push({ type: 'step-header', content: restoreInline(safeContent(para)) });
             continue;
         }
 
         // ── Standalone ALL-CAPS career title ───────────────────
         if (/^[A-Z][A-Z\s\/&·]{4,50}$/.test(para) && para === para.toUpperCase() && !para.includes(':')) {
             flushCareer(); flushRoadmap();
-            careerTitle  = para;
+            careerTitle  = escLabel(para);
             careerBuffer = {};
             continue;
         }
@@ -485,7 +498,10 @@ function renderMathContent(raw) {
         var bulletLines = para.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
         if (bulletLines.length > 1 && bulletLines.every(function(l) { return /^[-•·▸▹→]/.test(l); })) {
             flushCareer();
-            var bulletItems = bulletLines.map(function(l) { return restoreInline(l.replace(/^[-•·▸▹→]\s*/, '')); });
+            var bulletItems = bulletLines.map(function(l) {
+                var rawBullet = l.replace(/^[-•·▸▹→]\s*/, '');
+                return restoreInline(safeContent(rawBullet));
+            });
             outputBlocks.push({ type: 'bullets', items: bulletItems });
             continue;
         }
@@ -493,13 +509,16 @@ function renderMathContent(raw) {
         // ── Regular paragraph ──────────────────────────────────
         flushCareer();
         if (inRoadmap) flushRoadmap();
-        outputBlocks.push({ type: 'paragraph', content: restoreInline(para) });
+        // THE KEY FIX: safeContent runs first (escapes & < >),
+        // then restoreInline puts the raw $...$ back untouched.
+        // MathJax sees live $ delimiters and renders correctly.
+        outputBlocks.push({ type: 'paragraph', content: restoreInline(safeContent(para)) });
     }
 
     flushCareer();
     flushRoadmap();
 
-    // ── Step 5: Render blocks to HTML ─────────────────────────
+    // ── Step 6: Render blocks to HTML ─────────────────────────
     var html       = '';
     var yearBuffer = [];
 
@@ -517,6 +536,7 @@ function renderMathContent(raw) {
         switch (block.type) {
 
             case 'formula':
+                // Raw $$...$$ — MathJax renders this directly
                 html += '<div class="vr-formula-box">' + block.content + '</div>';
                 break;
 
@@ -524,54 +544,55 @@ function renderMathContent(raw) {
                 var metaSH = getSectionMeta(block.label);
                 html += '<div class="vr-section-header vr-sh-' + metaSH.color + '">' +
                     '<span class="vr-sh-icon">' + metaSH.icon + '</span>' +
-                    '<span class="vr-sh-text">' + esc(block.label) + '</span>' +
+                    '<span class="vr-sh-text">' + escLabel(block.label) + '</span>' +
                     '</div>';
                 break;
             }
 
             case 'inline-section': {
                 var metaIS = getSectionMeta(block.label);
+                // block.content = safeContent + math restored — ready for MathJax
 
                 if (block.label === 'WIKIPEDIA' || /^RESOURCE/i.test(block.label)) {
                     var urlMatch = block.content.match(/https?:\/\/[^\s]+/);
                     html += '<div class="vr-inline-section vr-is-' + metaIS.color + '">' +
                         '<span class="vr-is-icon">' + metaIS.icon + '</span>' +
-                        '<span class="vr-is-label">' + esc(block.label) + '</span>' +
-                        (urlMatch ? resourceLink(urlMatch[0]) : linkify(esc(block.content))) +
+                        '<span class="vr-is-label">' + escLabel(block.label) + '</span>' +
+                        (urlMatch ? resourceLink(urlMatch[0]) : linkify(block.content)) +
                         '</div>';
                 } else if (/SALARY/i.test(block.label)) {
                     html += '<div class="vr-inline-section vr-is-green">' +
                         '<span class="vr-is-icon">💰</span>' +
-                        '<span class="vr-is-label">' + esc(block.label) + '</span>' +
-                        '<span class="vr-salary-badge">' + esc(block.content) + '</span>' +
+                        '<span class="vr-is-label">' + escLabel(block.label) + '</span>' +
+                        '<span class="vr-salary-badge">' + block.content + '</span>' +
                         '</div>';
                 } else if (/DEMAND/i.test(block.label)) {
                     var demandLvl = /HIGH/i.test(block.content) ? 'high' : /LOW/i.test(block.content) ? 'low' : 'med';
                     html += '<div class="vr-inline-section vr-is-' + metaIS.color + '">' +
                         '<span class="vr-is-icon">' + metaIS.icon + '</span>' +
-                        '<span class="vr-is-label">' + esc(block.label) + '</span>' +
-                        '<span class="vr-demand-badge vr-demand-' + demandLvl + '">' + esc(block.content) + '</span>' +
+                        '<span class="vr-is-label">' + escLabel(block.label) + '</span>' +
+                        '<span class="vr-demand-badge vr-demand-' + demandLvl + '">' + block.content + '</span>' +
                         '</div>';
                 } else if (/CONFIDENCE/i.test(block.label)) {
                     var confLvl   = /HIGH/i.test(block.content) ? 'high' : /MEDIUM/i.test(block.content) ? 'med' : 'low';
-                    var confColor = confLvl === 'high' ? '#22c55e' : confLvl === 'med' ? '#f5a623' : '#ef4444';
+                    var confColor = confLvl === 'high' ? '#4ade80' : confLvl === 'med' ? '#f5a623' : '#f87171';
                     html += '<div class="vr-inline-section vr-is-teal">' +
                         '<span class="vr-is-icon">📊</span>' +
                         '<span class="vr-is-label">CONFIDENCE</span>' +
                         '<span class="vr-confidence-badge" style="color:' + confColor + ';font-weight:700;">' +
-                        esc(block.content) + '</span>' +
+                        block.content + '</span>' +
                         '</div>';
                 } else if (/VERIFICATION/i.test(block.label)) {
                     html += '<div class="vr-inline-section vr-is-green">' +
                         '<span class="vr-is-icon">✅</span>' +
                         '<span class="vr-is-label">VERIFICATION</span>' +
-                        '<span class="vr-is-val">' + linkify(esc(block.content)) + '</span>' +
+                        '<span class="vr-is-val">' + linkify(block.content) + '</span>' +
                         '</div>';
                 } else {
                     html += '<div class="vr-inline-section vr-is-' + metaIS.color + '">' +
                         '<span class="vr-is-icon">' + metaIS.icon + '</span>' +
-                        '<span class="vr-is-label">' + esc(block.label) + '</span>' +
-                        '<span class="vr-is-val">' + linkify(esc(block.content)) + '</span>' +
+                        '<span class="vr-is-label">' + escLabel(block.label) + '</span>' +
+                        '<span class="vr-is-val">' + linkify(block.content) + '</span>' +
                         '</div>';
                 }
                 break;
@@ -587,8 +608,11 @@ function renderMathContent(raw) {
 
             case 'year-header': {
                 var metaYH = getSectionMeta(block.label);
-                yearBuffer.push('<div class="vr-year-card vr-year-' + YEAR_COLORS[block.idx % 4] + '">' +
-                    '<div class="vr-year-badge">' + metaYH.icon + ' ' + esc(block.label) + '</div></div>');
+                yearBuffer.push(
+                    '<div class="vr-year-card vr-year-' + YEAR_COLORS[block.idx % 4] + '">' +
+                    '<div class="vr-year-badge">' + metaYH.icon + ' ' + escLabel(block.label) + '</div>' +
+                    '</div>'
+                );
                 break;
             }
 
@@ -597,33 +621,34 @@ function renderMathContent(raw) {
                 break;
 
             case 'numbered':
-                html += renderNumberedList(block.items.map(function(item) { return linkify(esc(item)); }));
+                // items already have safeContent+restore — pass directly
+                html += renderNumberedList(block.items.map(function(item) { return linkify(item); }));
                 break;
 
             case 'bullets':
                 html += '<ul class="vr-bullet-list">';
                 for (var bui = 0; bui < block.items.length; bui++) {
-                    html += '<li>' + linkify(esc(block.items[bui])) + '</li>';
+                    html += '<li>' + linkify(block.items[bui]) + '</li>';
                 }
                 html += '</ul>';
                 break;
 
             case 'step-header':
-                html += '<div class="vr-step-header-line">' + esc(block.content) + '</div>';
+                html += '<div class="vr-step-header-line">' + block.content + '</div>';
                 break;
 
             case 'first-step':
                 html += '<div class="vr-first-step">' +
                     '<div class="vr-fs-label">⚡ FIRST STEP THIS WEEK</div>' +
-                    '<div class="vr-fs-body">' + linkify(esc(block.content)) + '</div>' +
+                    '<div class="vr-fs-body">' + linkify(block.content) + '</div>' +
                     '</div>';
                 break;
 
             case 'paragraph':
             default:
-                // FIX: Don't check for $$ here — math is already tokenised and restored.
-                // Just render as paragraph. MathJax will handle $$ inside the text.
-                html += '<p class="vr-para">' + linkify(esc(block.content)) + '</p>';
+                // content = safeContent applied then math restored —
+                // MathJax sees live $...$ and $$...$$ and renders them.
+                html += '<p class="vr-para">' + linkify(block.content) + '</p>';
                 break;
         }
     }
