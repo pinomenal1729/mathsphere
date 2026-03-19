@@ -12,24 +12,20 @@
     MathJax = {
         tex: {
             inlineMath:  [['$','$'],['\\(','\\)']],
-            displayMath: [['
-$$
-','
-$$
-'],['\$$','\$$']],
+            displayMath: [['$$','$$'],['\\[','\\]']],
             processEscapes: true,
             processEnvironments: true
         },
         options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] },
-        startup: { typeset: false }
-    };
+        startup: { typeset: false } 
+    };       
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app">
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
