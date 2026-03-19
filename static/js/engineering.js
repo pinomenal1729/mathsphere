@@ -1,0 +1,545 @@
+// ══════════════════════════════════════════════════════════════
+//  MATHSPHERE ENGINEERING — engineering.js
+//  Mode switcher + full engineering interface logic
+// ══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+    
+    // ── State ─────────────────────────────────────────────────────
+    var state = {
+        mode:           'general',   // 'general' | 'engineering'
+        activeTab:      'learn',     // learn | revision | pyq | mocktest | ask
+        activeSem:      null,
+        activeTopic:    null,
+        activeSubtopic: null,
+        activeSection:  'definition',
+        syllabus:       null,
+        loading:        false
+    };
+    
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        injectLanding();
+        injectEngApp();
+        loadSyllabus();
+    
+        var saved = localStorage.getItem('msMode');
+        if (saved === 'engineering') {
+            activateEngineering();
+        } else if (saved === 'general') {
+            activateGeneral();
+        } else {
+            showLanding();
+        }
+    });
+    
+    // ══════════════════════════════════════════════════════════════
+    //  LANDING OVERLAY — injected into body
+    // ══════════════════════════════════════════════════════════════
+    function injectLanding() {
+        var el = document.createElement('div');
+        el.id = 'mode-landing';
+        el.className = 'hidden';
+        el.innerHTML = [
+            '<div class="landing-logo">',
+            '  <div class="landing-logo-mark">M</div>',
+            '  <div>',
+            '    <div style="font-size:16px;font-weight:700;letter-spacing:-.3px">MathSphere</div>',
+            '    <div class="landing-tagline">Learn Maths with Anupam</div>',
+            '  </div>',
+            '</div>',
+            '<div class="landing-title">Choose your learning path</div>',
+            '<div class="landing-sub">Select General Mathematics for broad topics,<br>or Engineering Mathematics for B.Tech Semester 1–4.</div>',
+            '<div class="landing-cards">',
+    
+            '  <div class="landing-card landing-card--general" onclick="window.engModule.chooseMode(\'general\')">',
+            '    <div class="landing-card-icon">∑</div>',
+            '    <div class="landing-card-title">General Mathematics</div>',
+            '    <div class="landing-card-desc">Ask Anupam, Intuition Builder, Story Mode, PYQ Practice, Graph Plotter, Mock Tests and more — for all levels from Class 11 to research.</div>',
+            '    <span class="landing-card-badge">All levels</span>',
+            '  </div>',
+    
+            '  <div class="landing-card landing-card--engineering" onclick="window.engModule.chooseMode(\'engineering\')">',
+            '    <div class="landing-card-icon" style="font-family:var(--font-mono);font-size:16px;color:#3b82f6">∫∇</div>',
+            '    <div class="landing-card-title">Engineering Mathematics</div>',
+            '    <div class="landing-card-desc">Structured Semester 1–4 content based on IIT/NIT syllabus. Definitions, theorems, proofs, PYQs from universities across India, and customisable mock tests.</div>',
+            '    <span class="landing-card-badge">B.Tech Sem 1–4</span>',
+            '  </div>',
+    
+            '</div>',
+            '<div class="landing-footer">Your choice is remembered — switch anytime using the button in the header.</div>'
+        ].join('');
+        document.body.appendChild(el);
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  ENGINEERING APP — injected into body
+    // ══════════════════════════════════════════════════════════════
+    function injectEngApp() {
+        var el = document.createElement('div');
+        el.id = 'eng-app';
+        el.innerHTML = [
+            // Header
+            '<div class="eng-header">',
+            '  <div class="eng-header-brand">',
+            '    <div class="eng-logo-mark">E</div>',
+            '    <div>',
+            '      <div class="eng-logo-text">MathSphere</div>',
+            '      <div class="eng-logo-sub">Engineering Mathematics</div>',
+            '    </div>',
+            '  </div>',
+            '  <div class="eng-tabs">',
+            '    <button class="eng-tab active" data-tab="learn"    onclick="window.engModule.switchTab(\'learn\',this)">Learn</button>',
+            '    <button class="eng-tab"        data-tab="revision" onclick="window.engModule.switchTab(\'revision\',this)">Quick Revision</button>',
+            '    <button class="eng-tab"        data-tab="pyq"      onclick="window.engModule.switchTab(\'pyq\',this)">PYQ Bank</button>',
+            '    <button class="eng-tab"        data-tab="mocktest" onclick="window.engModule.switchTab(\'mocktest\',this)">Mock Test</button>',
+            '    <button class="eng-tab"        data-tab="ask"      onclick="window.engModule.switchTab(\'ask\',this)">Ask AI</button>',
+            '  </div>',
+            '  <div class="eng-header-right">',
+            '    <button class="mode-switch-btn" onclick="window.engModule.showLanding()">⇄ Switch Mode</button>',
+            '  </div>',
+            '</div>',
+    
+            // Body
+            '<div class="eng-body">',
+    
+            // Sidebar
+            '  <div class="eng-sidebar">',
+            '    <div class="eng-sem-pills" id="eng-sem-pills">',
+            '      <button class="eng-sem-pill" data-sem="sem1" onclick="window.engModule.selectSem(\'sem1\',this)">Sem 1</button>',
+            '      <button class="eng-sem-pill" data-sem="sem2" onclick="window.engModule.selectSem(\'sem2\',this)">Sem 2</button>',
+            '      <button class="eng-sem-pill" data-sem="sem3" onclick="window.engModule.selectSem(\'sem3\',this)">Sem 3</button>',
+            '      <button class="eng-sem-pill" data-sem="sem4" onclick="window.engModule.selectSem(\'sem4\',this)">Sem 4</button>',
+            '    </div>',
+            '    <div class="eng-topic-list" id="eng-topic-list"></div>',
+            '  </div>',
+    
+            // Content
+            '  <div class="eng-content">',
+    
+            // Subtopic bar
+            '    <div class="eng-subtopic-bar hidden" id="eng-subtopic-bar"></div>',
+    
+            // Section buttons (Learn tab only)
+            '    <div class="eng-section-bar hidden" id="eng-section-bar">',
+            '      <button class="eng-sec-btn active" data-sec="definition" onclick="window.engModule.selectSection(\'definition\',this)">Definition</button>',
+            '      <button class="eng-sec-btn"        data-sec="theorem"    onclick="window.engModule.selectSection(\'theorem\',this)">Theorems</button>',
+            '      <button class="eng-sec-btn"        data-sec="examples"   onclick="window.engModule.selectSection(\'examples\',this)">Examples</button>',
+            '      <button class="eng-sec-btn"        data-sec="practice"   onclick="window.engModule.selectSection(\'practice\',this)">Practice</button>',
+            '    </div>',
+    
+            // PYQ filters
+            '    <div class="eng-filters hidden" id="eng-pyq-filters">',
+            '      <span class="eng-filter-label">University</span>',
+            '      <select class="eng-select" id="eng-univ-select">',
+            '        <option value="all">All India</option>',
+            '        <option value="mumbai">Mumbai University</option>',
+            '        <option value="vtu">VTU Bangalore</option>',
+            '        <option value="anna">Anna University</option>',
+            '        <option value="aktu">AKTU Lucknow</option>',
+            '        <option value="abroad">International</option>',
+            '      </select>',
+            '      <span class="eng-filter-label">Difficulty</span>',
+            '      <select class="eng-select" id="eng-diff-select">',
+            '        <option value="easy">Easy (2–4 marks)</option>',
+            '        <option value="medium" selected>Medium (4–6 marks)</option>',
+            '        <option value="hard">Hard (6–10 marks)</option>',
+            '      </select>',
+            '      <button class="eng-gen-btn" onclick="window.engModule.fetchPYQ()">Generate PYQs</button>',
+            '    </div>',
+    
+            // Mock test config
+            '    <div class="eng-mock-config hidden" id="eng-mock-config">',
+            '      <span class="eng-mock-label">Questions</span>',
+            '      <select class="eng-select" id="eng-numq-select">',
+            '        <option value="5">5 Questions</option>',
+            '        <option value="10" selected>10 Questions</option>',
+            '        <option value="20">20 Questions</option>',
+            '      </select>',
+            '      <span class="eng-mock-label">Marks each</span>',
+            '      <select class="eng-select" id="eng-marks-select">',
+            '        <option value="2">2 Marks</option>',
+            '        <option value="5" selected>5 Marks</option>',
+            '        <option value="10">10 Marks</option>',
+            '      </select>',
+            '      <button class="eng-gen-btn" onclick="window.engModule.fetchMockTest()">Generate Paper</button>',
+            '    </div>',
+    
+            // Output
+            '    <div class="eng-output" id="eng-output">',
+            '      <div class="eng-welcome" id="eng-welcome">',
+            '        <div class="eng-welcome-symbol">∇</div>',
+            '        <div class="eng-welcome-title">Engineering Mathematics</div>',
+            '        <div class="eng-welcome-sub">Select a semester from the left, choose a topic, then pick a subtopic to begin. Content is generated live — definitions, theorems, worked examples, PYQs and mock tests all in one place.</div>',
+            '      </div>',
+            '    </div>',
+    
+            // Ask AI input
+            '    <div class="eng-ask-area hidden" id="eng-ask-area">',
+            '      <div class="eng-input-box">',
+            '        <textarea id="eng-ask-input" rows="1" placeholder="Ask any engineering mathematics question…" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();window.engModule.askAI()}"></textarea>',
+            '        <button class="eng-send" onclick="window.engModule.askAI()">',
+            '          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+            '        </button>',
+            '      </div>',
+            '    </div>',
+    
+            '  </div>', // /eng-content
+            '</div>'    // /eng-body
+        ].join('');
+        document.body.appendChild(el);
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  SYLLABUS LOADER
+    // ══════════════════════════════════════════════════════════════
+    function loadSyllabus() {
+        fetch('/eng/syllabus')
+            .then(function(r){ return r.json(); })
+            .then(function(data){ state.syllabus = data; })
+            .catch(function(e){ console.warn('Syllabus load failed', e); });
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  MODE SWITCHING
+    // ══════════════════════════════════════════════════════════════
+    function showLanding() {
+        document.getElementById('mode-landing').classList.remove('hidden');
+        var app = document.getElementById('app');
+        if (app) app.style.display = 'none';
+        document.getElementById('eng-app').classList.remove('active');
+        state.mode = null;
+    }
+    
+    function chooseMode(mode) {
+        localStorage.setItem('msMode', mode);
+        document.getElementById('mode-landing').classList.add('hidden');
+        if (mode === 'engineering') {
+            activateEngineering();
+        } else {
+            activateGeneral();
+        }
+    }
+    
+    function activateGeneral() {
+        state.mode = 'general';
+        var app = document.getElementById('app');
+        if (app) app.style.display = '';
+        document.getElementById('eng-app').classList.remove('active');
+        // Inject switch button into existing header if not already there
+        injectSwitchBtnIntoGeneral();
+    }
+    
+    function activateEngineering() {
+        state.mode = 'engineering';
+        var app = document.getElementById('app');
+        if (app) app.style.display = 'none';
+        document.getElementById('eng-app').classList.add('active');
+    }
+    
+    function injectSwitchBtnIntoGeneral() {
+        var right = document.querySelector('.header-right');
+        if (!right || document.getElementById('gen-switch-btn')) return;
+        var btn = document.createElement('button');
+        btn.id = 'gen-switch-btn';
+        btn.className = 'mode-switch-btn';
+        btn.textContent = '⇄ Switch Mode';
+        btn.onclick = function() { window.engModule.showLanding(); };
+        right.insertBefore(btn, right.firstChild);
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  TAB SWITCHING
+    // ══════════════════════════════════════════════════════════════
+    function switchTab(tab, btn) {
+        state.activeTab = tab;
+        document.querySelectorAll('.eng-tab').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+    
+        // Show/hide section bar, filters, mock config, ask area
+        toggleEl('eng-section-bar', tab === 'learn' && state.activeSubtopic);
+        toggleEl('eng-pyq-filters', tab === 'pyq' && state.activeSubtopic);
+        toggleEl('eng-mock-config', tab === 'mocktest' && state.activeSubtopic);
+        toggleEl('eng-ask-area', tab === 'ask');
+        toggleEl('eng-subtopic-bar', tab !== 'ask' && state.activeTopic);
+    
+        // Auto-fetch on tab switch if subtopic already selected
+        if (state.activeSubtopic) {
+            if (tab === 'revision') fetchContent('revision');
+            // pyq and mocktest need button click
+        }
+        if (tab === 'ask') {
+            setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px">?</div><div class="eng-welcome-title">Ask Engineering AI</div><div class="eng-welcome-sub">Ask any B.Tech mathematics question — I know you\'re studying for semester exams and will answer at exactly that level.</div></div>');
+        }
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION
+    // ══════════════════════════════════════════════════════════════
+    function selectSem(sem, btn) {
+        state.activeSem = sem;
+        state.activeTopic = null;
+        state.activeSubtopic = null;
+    
+        document.querySelectorAll('.eng-sem-pill').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+    
+        renderTopicList(sem);
+        clearSubtopics();
+        clearSectionBar();
+        clearFilters();
+        setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol">∫</div><div class="eng-welcome-title">' + (state.syllabus && state.syllabus[sem] ? state.syllabus[sem].label : sem) + '</div><div class="eng-welcome-sub">Select a topic from the left to begin.</div></div>');
+    }
+    
+    function renderTopicList(sem) {
+        var list = document.getElementById('eng-topic-list');
+        if (!list || !state.syllabus || !state.syllabus[sem]) { list.innerHTML = ''; return; }
+        var topics = state.syllabus[sem].topics;
+        var html = '';
+        Object.keys(topics).forEach(function(key) {
+            var t = topics[key];
+            html += '<div class="eng-topic-group">';
+            html += '<button class="eng-topic-btn" data-topic="' + key + '" onclick="window.engModule.selectTopic(\'' + key + '\',this)">' + t.label + '</button>';
+            html += '</div>';
+        });
+        list.innerHTML = html;
+    }
+    
+    function selectTopic(topicKey, btn) {
+        state.activeTopic = topicKey;
+        state.activeSubtopic = null;
+    
+        document.querySelectorAll('.eng-topic-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+    
+        renderSubtopics(topicKey);
+        clearSectionBar();
+        clearFilters();
+    
+        var topicLabel = btn.textContent;
+        setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px;font-family:var(--font-mono)">{ }</div><div class="eng-welcome-title">' + topicLabel + '</div><div class="eng-welcome-sub">Select a subtopic above to load content, PYQs, or a mock test.</div></div>');
+    }
+    
+    function renderSubtopics(topicKey) {
+        var bar = document.getElementById('eng-subtopic-bar');
+        if (!bar || !state.syllabus || !state.activeSem) { if(bar) bar.classList.add('hidden'); return; }
+        var sem = state.syllabus[state.activeSem];
+        if (!sem || !sem.topics[topicKey]) { bar.classList.add('hidden'); return; }
+    
+        var subs = sem.topics[topicKey].subtopics;
+        var html = '';
+        subs.forEach(function(s) {
+            html += '<button class="eng-chip" data-sub="' + s + '" onclick="window.engModule.selectSubtopic(\'' + encodeURIComponent(s) + '\',this)">' + s + '</button>';
+        });
+        bar.innerHTML = html;
+        bar.classList.remove('hidden');
+    }
+    
+    function selectSubtopic(encodedSub, btn) {
+        var sub = decodeURIComponent(encodedSub);
+        state.activeSubtopic = sub;
+    
+        document.querySelectorAll('.eng-chip').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+    
+        // Show appropriate controls
+        if (state.activeTab === 'learn') {
+            document.getElementById('eng-section-bar').classList.remove('hidden');
+            // Reset to definition
+            document.querySelectorAll('.eng-sec-btn').forEach(function(b){ b.classList.remove('active'); });
+            document.querySelector('.eng-sec-btn[data-sec="definition"]').classList.add('active');
+            state.activeSection = 'definition';
+            fetchContent('learn');
+        } else if (state.activeTab === 'revision') {
+            document.getElementById('eng-section-bar').classList.add('hidden');
+            fetchContent('revision');
+        } else if (state.activeTab === 'pyq') {
+            document.getElementById('eng-pyq-filters').classList.remove('hidden');
+            document.getElementById('eng-section-bar').classList.add('hidden');
+            fetchPYQ();
+        } else if (state.activeTab === 'mocktest') {
+            document.getElementById('eng-mock-config').classList.remove('hidden');
+            document.getElementById('eng-section-bar').classList.add('hidden');
+        }
+        toggleEl('eng-ask-area', state.activeTab === 'ask');
+    }
+    
+    function selectSection(sec, btn) {
+        state.activeSection = sec;
+        document.querySelectorAll('.eng-sec-btn').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        if (state.activeSubtopic) fetchContent('learn');
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  API CALLS
+    // ══════════════════════════════════════════════════════════════
+    function fetchContent(mode) {
+        if (!state.activeSubtopic) return;
+        showLoading('Generating ' + (mode === 'learn' ? state.activeSection : 'revision notes') + ' for ' + state.activeSubtopic + '…');
+    
+        var payload = {
+            topic:    state.activeTopic,
+            subtopic: state.activeSubtopic
+        };
+        if (mode === 'learn') payload.section = state.activeSection;
+    
+        var endpoint = mode === 'learn' ? '/eng/learn' : '/eng/revision';
+        postToAPI(endpoint, payload, function(data) {
+            renderResponse(data.response, data.source, data.references || []);
+        });
+    }
+    
+    function fetchPYQ() {
+        if (!state.activeSubtopic) return;
+        var univ = document.getElementById('eng-univ-select').value;
+        var diff = document.getElementById('eng-diff-select').value;
+        showLoading('Fetching PYQs on ' + state.activeSubtopic + '…');
+        postToAPI('/eng/pyq', {
+            topic: state.activeTopic,
+            subtopic: state.activeSubtopic,
+            university: univ,
+            difficulty: diff
+        }, function(data) {
+            renderResponse(data.response, data.source, data.references || []);
+        });
+    }
+    
+    function fetchMockTest() {
+        if (!state.activeSubtopic) return;
+        var numQ  = document.getElementById('eng-numq-select').value;
+        var marks = document.getElementById('eng-marks-select').value;
+        showLoading('Generating ' + numQ + '-question mock test on ' + state.activeSubtopic + '…');
+        postToAPI('/eng/mocktest', {
+            topic: state.activeTopic,
+            subtopic: state.activeSubtopic,
+            num_questions: numQ,
+            marks_each: marks
+        }, function(data) {
+            renderResponse(data.response, data.source, []);
+        });
+    }
+    
+    function askAI() {
+        var inp = document.getElementById('eng-ask-input');
+        var q = inp.value.trim();
+        if (!q) return;
+        inp.value = '';
+        inp.style.height = 'auto';
+        showLoading('Thinking…');
+        postToAPI('/eng/ask', { question: q }, function(data) {
+            renderResponse(data.response, data.source, []);
+        });
+    }
+    
+    function postToAPI(endpoint, payload, cb) {
+        state.loading = true;
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            state.loading = false;
+            if (data.error) {
+                setOutput('<div class="eng-response"><p style="color:var(--red)">Error: ' + data.error + '</p></div>');
+            } else {
+                cb(data);
+            }
+        })
+        .catch(function(e){
+            state.loading = false;
+            setOutput('<div class="eng-response"><p style="color:var(--red)">Network error. Please try again.</p></div>');
+        });
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  RENDERING
+    // ══════════════════════════════════════════════════════════════
+    function showLoading(msg) {
+        setOutput('<div class="eng-loading"><div class="eng-spinner"></div>' + (msg || 'Loading…') + '</div>');
+    }
+    
+    function renderResponse(text, source, refs) {
+        var rendered = '';
+    
+        // Use existing renderMathContent if available
+        if (typeof renderMathContent === 'function') {
+            rendered = renderMathContent(text);
+        } else {
+            rendered = '<p class="vr-para">' + text.replace(/\n{2,}/g, '</p><p class="vr-para">').replace(/\n/g, '<br>') + '</p>';
+        }
+    
+        var sourceHtml = source ? '<div style="margin-top:12px;font-size:10px;font-family:var(--font-mono);color:var(--text-disabled)">Source: ' + source + '</div>' : '';
+    
+        var refsHtml = '';
+        if (refs && refs.length) {
+            var links = refs.map(function(url) {
+                var label = url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0];
+                return '<a href="' + url + '" target="_blank" rel="noopener">🔗 ' + label + '</a>';
+            }).join('');
+            refsHtml = '<div class="eng-refs"><div class="eng-refs-title">References &amp; Further Reading</div><div class="eng-refs-list">' + links + '</div></div>';
+        }
+    
+        var html = '<div class="eng-response">' + rendered + sourceHtml + '</div>' + refsHtml;
+        setOutput(html);
+    
+        // Trigger MathJax
+        var out = document.getElementById('eng-output');
+        if (out && typeof typesetEl === 'function') typesetEl(out);
+        else if (window.MathJax && window.MathJax.typesetPromise) {
+            setTimeout(function() {
+                window.MathJax.typesetPromise([out]).catch(function(){});
+            }, 50);
+        }
+    }
+    
+    function setOutput(html) {
+        var out = document.getElementById('eng-output');
+        if (out) out.innerHTML = html;
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════════════════════
+    function toggleEl(id, show) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (show) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    }
+    
+    function clearSubtopics() {
+        var bar = document.getElementById('eng-subtopic-bar');
+        if (bar) { bar.innerHTML = ''; bar.classList.add('hidden'); }
+    }
+    
+    function clearSectionBar() {
+        var bar = document.getElementById('eng-section-bar');
+        if (bar) bar.classList.add('hidden');
+    }
+    
+    function clearFilters() {
+        toggleEl('eng-pyq-filters', false);
+        toggleEl('eng-mock-config', false);
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  PUBLIC API
+    // ══════════════════════════════════════════════════════════════
+    window.engModule = {
+        chooseMode:      chooseMode,
+        showLanding:     showLanding,
+        switchTab:       switchTab,
+        selectSem:       selectSem,
+        selectTopic:     selectTopic,
+        selectSubtopic:  selectSubtopic,
+        selectSection:   selectSection,
+        fetchPYQ:        fetchPYQ,
+        fetchMockTest:   fetchMockTest,
+        askAI:           askAI
+    };
+    
+    })();

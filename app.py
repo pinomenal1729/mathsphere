@@ -2,12 +2,17 @@ from flask import Flask, render_template, request, jsonify
 from google import genai
 from groq import Groq
 from dotenv import load_dotenv
+from engineering_math import eng_bp
 import os, base64, re, time
 from PIL import Image
 import io
 
+
+
 load_dotenv()
 app = Flask(__name__)
+app.register_blueprint(eng_bp)
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
