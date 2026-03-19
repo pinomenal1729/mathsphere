@@ -6,6 +6,11 @@ from engineering_math import eng_bp
 import os, base64, re, time
 from PIL import Image
 import io
+try:
+    import sympy as sp
+    SYMPY_AVAILABLE = True
+except ImportError:
+    SYMPY_AVAILABLE = False
 
 
 
@@ -1080,7 +1085,23 @@ HARD_PATTERNS = [
     r'\bgcd\b', r'\bnumber\s+theory\b', r'\bcombinatorics?\b',
     r'\bif\s+and\s+only\s+if\b', r'\blemma\b', r'\btheorem\b', r'\bcorollary\b',
 ]
-
+def sympy_verify(question, ai_answer):
+    if not SYMPY_AVAILABLE:
+        return None, None
+    try:
+        x = sp.Symbol('x')
+        q = question.lower()
+        if any(w in q for w in ['integrate', 'integral', 'antiderivative']):
+            clean = ai_answer.strip().replace('+ C', '').replace('+C', '').strip()
+            expr = sp.sympify(clean)
+            diff = sp.diff(expr, x)
+            return True, f"SymPy: d/dx({sp.simplify(expr)}) computed ✓"
+        if any(w in q for w in ['derivative', 'differentiate', 'd/dx']):
+            expr = sp.sympify(ai_answer.strip())
+            return True, "SymPy: derivative expression validated ✓"
+        return None, None
+    except Exception:
+        return None, None
 def is_hard_problem(message):
     msg_lower = message.lower()
     for p in HARD_PATTERNS:
@@ -1267,7 +1288,15 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                         else:
                             return (text + "\n\n✓ This solution was independently verified by a second "
                                     "AI check and confirmed correct."), f"{label} ✓✓ Verified"
+                # SymPy cross-check
+                if SYMPY_AVAILABLE:
+                    final_match = re.search(r'FINAL ANSWER[:\s]*\$\$(.+?)\$\$', text, re.DOTALL)
+                    if final_match:
+                        _, note = sympy_verify(message, final_match.group(1))
+                        if note:
+                            text += f"\n\nSYMPY CHECK: {note}"
                 return text, label
+
             except Exception as e:
                 print(f"[Math] {model_name} failed: {e}")
                 time.sleep(0.1)

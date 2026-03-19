@@ -2696,23 +2696,45 @@
    }
    
    @media (max-width: 600px) {
-       .video-rail { display: none !important; }
-       .sidebar { width: min(82vw, 280px); }
-       .shell { width: 100%; }
-       .header-tab-label { display: none; }
-       .logo-text { font-size: 14px; }
-       .header-tagline { display: none; }
-       .welcome-title { font-size: 24px; }
-       .welcome-symbol { font-size: 44px; }
-       .message.user { max-width: 92%; }
-       .message.bot  { max-width: 98%; }
-       .about-cards  { grid-template-columns: 1fr; }
-       .feature-showcase { grid-template-columns: 1fr; }
-       .exam-pattern-grid { grid-template-columns: repeat(2, 1fr); }
-       .exam-selector { flex-direction: column; }
-       .chat-window, .panel-chat { padding: var(--space-4); }
-       .input-area { padding: var(--space-2) var(--space-3) var(--space-3); }
-   }
+    .video-rail { display: none !important; }
+    .sidebar { width: min(82vw, 280px); }
+    .shell { width: 100%; }
+    .header-tab-label { display: none; }
+    .logo-text { font-size: 14px; }
+    .header-tagline { display: none; }
+    .welcome-title { font-size: 22px; }
+    .welcome-symbol { font-size: 40px; }
+    .welcome-sub { font-size: 12px; }
+    .message.user { max-width: 94%; }
+    .message.bot  { max-width: 99%; }
+    .msg-content  { font-size: 13px; padding: 10px 12px; }
+    .about-cards  { grid-template-columns: 1fr; }
+    .feature-showcase { grid-template-columns: 1fr; gap: 8px; }
+    .exam-pattern-grid { grid-template-columns: repeat(2, 1fr); }
+    .exam-selector { flex-direction: column; }
+    .chat-window, .panel-chat { padding: var(--space-4) var(--space-3); }
+    .input-area { padding: var(--space-2) var(--space-3) var(--space-3); }
+    .input-hint { display: none; }
+    .panel-title { font-size: 15px; }
+    .panel-sub   { font-size: 11px; }
+    .panel-header { padding: 12px 16px 10px; }
+    .social-links { flex-wrap: wrap; justify-content: center; }
+    .pyq-selector { gap: 4px; }
+    .pyq-sel-btn  { font-size: 11px; padding: 7px 4px; }
+    .exam-tabs { flex-wrap: wrap; gap: 4px; padding: 8px 12px 0; }
+    .exam-tab-btn { font-size: 11px; padding: 5px 10px; }
+    .graph-input-row { flex-direction: column; }
+    .plot-btn { width: 100%; justify-content: center; }
+    .quick-examples { gap: 4px; }
+    .welcome-chips, .pw-chips { gap: 6px; }
+    .chip { font-size: 11px; padding: 5px 10px; }
+    .diff-select { font-size: 11px; }
+    .panel-chat { padding: var(--space-3); }
+    .vr-formula-box { font-size: 13px; padding: 12px; }
+    .qc-question { font-size: 13px; }
+    .about-hero { padding: 20px 12px; }
+    .about-name { font-size: 20px; }
+}
    
    /* ── FLOATING MATH BG — removed heavy animation, replaced with ── */
    /* a subtle static dot grid already handled by body::before     */
