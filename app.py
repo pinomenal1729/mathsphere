@@ -28,6 +28,11 @@ FORMAT_RULES = """
 OUTPUT FORMAT RULES:
 - Write inline math as $...$ for symbols within text sentences.
 - Write EVERY standalone equation on its OWN LINE as $$...$$
+- CRITICAL: Never put $...$ inline math inside ALL-CAPS section header lines.
+  If a section has math, put the math on a NEW PARAGRAPH LINE below the header — never on the same line as the ALL-CAPS HEADER: label.
+  WRONG:  COMMON SUBSTITUTIONS: Use $u = \\sin(x)$ and $u = \\cos(x)$
+  CORRECT: COMMON SUBSTITUTIONS:
+           Use $u = \\sin(x)$, $u = \\cos(x)$, and $u = \\tan(x)$ for trigonometric integrals.
 - Never use markdown: no #, ##, *, **, _, __ symbols ever.
 - Step labels are OPTIONAL — only use STEP N: for problems with 5+ steps.
 - Keep all prose to an absolute minimum. One short sentence per step maximum.
@@ -45,6 +50,11 @@ STRUCTURED OUTPUT RULES — FOLLOW EXACTLY:
 - CRITICAL: Put a BLANK LINE (empty line) before AND after EVERY section header.
 - CRITICAL: Each numbered list item (1. 2. 3.) must be on its OWN LINE with a blank line before the list.
 - CRITICAL: Each bullet point (- item) must be on its OWN LINE.
+- CRITICAL: Never put $...$ math expressions inside ALL-CAPS HEADER: content lines.
+  Math must always appear on its own separate line or paragraph — never inline with a section header label.
+  WRONG:  MATHEMATICS USED: Uses $\\nabla^2 f$ and $\\lambda$ eigenvalues
+  CORRECT: MATHEMATICS USED:
+           Uses the Laplacian $\\nabla^2 f$ and eigenvalue equations $Av = \\lambda v$.
 - Use ALL-CAPS headers followed by colon for every section: SECTION NAME: content
 - Use numbered lists (1. 2. 3.) for steps, roadmaps, and sequences — ONE ITEM PER LINE
 - Use bullet points (- item) for lists — ONE ITEM PER LINE
@@ -207,6 +217,7 @@ ACCURACY:
 ALWAYS INCLUDE:
 - At least one concrete numerical example if the problem is conceptual.
 - COMMON MISTAKES: after the solution — 1-2 errors students typically make here.
+  Note: COMMON MISTAKES section must list errors in plain text, not with $math$ on the same header line.
 
 FORMAT — STRICTLY:
 - No paragraph explanations. No teaching. Just solving.
@@ -230,6 +241,10 @@ FINAL ANSWER:
 $$\\int x \\sin x\\,dx = -x\\cos x + \\sin x + C$$
 
 VERIFICATION: $\\frac{d}{dx}(-x\\cos x + \\sin x) = x\\sin x$ ✓
+
+COMMON MISTAKES:
+- Forgetting the sign change when integrating by parts a second time.
+- Dropping the constant of integration C.
 
 CONFIDENCE: HIGH
 
@@ -350,6 +365,7 @@ Respond about the mathematician using EXACTLY these section headers in ALL CAPS.
 Keep each section to 2 to 3 sentences maximum. Include formulas inline using $...$
 Put the single most important standalone formula in $$...$$ on its own paragraph.
 Do NOT use numbered lists anywhere in the response.
+CRITICAL: Never put $...$ math on the same line as a section header. Put math on the next line.
 
 NAME:
 [Full name, birth year to death year, nationality — one line]
@@ -358,10 +374,12 @@ EARLY LIFE:
 [2 sentences about upbringing and education]
 
 CONTRIBUTIONS:
-[3 sentences covering key mathematical work, with formulas inline]
+[3 sentences covering key mathematical work]
+
+[Key formula on its own line: $$...$$]
 
 KEY THEOREMS:
-[2 sentences about the most important named results, with formulas inline]
+[2 sentences about the most important named results]
 
 IMPACT:
 [2 sentences on lasting influence in mathematics and science]
@@ -381,10 +399,15 @@ Give exactly 5 project ideas. For each project use this EXACT structure:
 
 PROJECT TITLE HERE
 
-MATHEMATICS: [what maths is used, 1 to 2 sentences with formulas inline using $...$]
+MATHEMATICS:
+[What maths is used, 1 to 2 sentences. Put any formulas on their own line as $$...$$]
+
 TOOLS: [specific software and libraries — Python, NumPy, Matplotlib, etc.]
+
 APPLICATION: [real-world use in 1 sentence]
+
 BUILD: [exactly what the student will create — 2 sentences, be specific]
+
 RESOURCE: https://[one real, working URL relevant to this project]
 
 Leave a blank line between projects. No numbered sub-points. Be specific and practical.
@@ -398,9 +421,14 @@ Give exactly 5 of the MOST IMPORTANT real-world applications. For each use this 
 APPLICATION NAME
 
 FIELD: [domain in 3 words]
-HOW IT WORKS: [mathematics in action with key formula inline using $...$, 2 sentences]
+
+HOW IT WORKS:
+[Mathematics in action, 2 sentences. Put key formula on its own line: $$...$$]
+
 EXAMPLE: [one specific, concrete real example with company or technology name, 1 sentence]
+
 WHY IT MATTERS: [why this application is important to society, 1 sentence]
+
 RESOURCE: https://[one real, working URL — Wikipedia, course, or documentation page]
 
 Leave a blank line between applications. No numbered lists. Be specific with real companies and technologies.
@@ -410,17 +438,37 @@ Leave a blank line between applications. No numbered lists. Be specific with rea
 GRAPH_ANALYSIS_PROMPT = """You are MathSphere by Anupam Nigam — precise mathematics analysis engine.
 
 Analyze the function. One sentence per item. Write math inline using $...$
+CRITICAL: Each section header must be on its own line. The math content goes on the NEXT line.
 
-DOMAIN: [interval as complete sentence]
-RANGE: [complete sentence]
-CRITICAL POINTS: [solve $f'(x) = 0$, classify — one sentence]
-INFLECTION POINTS: [solve $f''(x) = 0$ — one sentence]
-INCREASING: [intervals — one sentence]
-DECREASING: [intervals — one sentence]
-CONCAVITY: [concave up and down — one sentence]
-ASYMPTOTES: [horizontal, vertical, oblique — one sentence]
-INTERCEPTS: [x and y intercepts — one sentence]
-SYMMETRY: [even, odd, or neither with reason — one sentence]
+DOMAIN:
+[interval as complete sentence with inline $...$]
+
+RANGE:
+[complete sentence]
+
+CRITICAL POINTS:
+[solve $f'(x) = 0$, classify — one sentence]
+
+INFLECTION POINTS:
+[solve $f''(x) = 0$ — one sentence]
+
+INCREASING:
+[intervals — one sentence]
+
+DECREASING:
+[intervals — one sentence]
+
+CONCAVITY:
+[concave up and down — one sentence]
+
+ASYMPTOTES:
+[horizontal, vertical, oblique — one sentence]
+
+INTERCEPTS:
+[x and y intercepts — one sentence]
+
+SYMMETRY:
+[even, odd, or neither with reason — one sentence]
 """ + FORMAT_RULES
 
 # ── INTUITION PROMPT ───────────────────────────────────────────
@@ -432,7 +480,7 @@ THE STORY:
 [2-3 sentences: A real human story of WHY this concept was needed. Name the person, era, the problem they faced.]
 
 THE ANALOGY:
-[2-3 sentences: A concrete everyday analogy a 12-year-old could feel. No jargon. Make them feel they already knew this.]
+[2-3 sentences: A concrete everyday analogy a 12-year-old could feel. No jargon.]
 
 WHAT YOUR BRAIN IS DOING:
 [2 sentences: The visual or physical intuition. What mental image captures this?]
@@ -441,7 +489,8 @@ THE CORE IDEA IN ONE LINE:
 [One crystal-clear sentence capturing the mathematical essence — no symbols]
 
 NOW THE MATHEMATICS:
-[Formal definition or key formula in $$...$$ now that intuition is built. 3-4 sentences with inline $...$]
+[3-4 sentences of explanation. Put the key formula on its own line:]
+$$[key formula here]$$
 
 KEY INSIGHT:
 [The single most important thing to remember — one punchy sentence]
@@ -462,7 +511,6 @@ INTUITION CHECK:
 
 Keep tone warm, curious, and wonder-filled. Never start with a formula.
 TONE: Speak like a brilliant friend who loves mathematics — enthusiastic, personal, never condescending.
-Use "you", "imagine", "picture this", "here's the secret" — make it feel like a conversation.
 """ + RICH_FORMAT_RULES
 
 # ── STORYTELLING PROMPT ────────────────────────────────────────
@@ -477,10 +525,12 @@ THE STRUGGLE:
 [2-3 sentences: What failed attempts happened? Who was racing? What made it hard?]
 
 THE BREAKTHROUGH:
-[2-3 sentences: The moment of discovery. Who saw it? What was the insight? Key idea with $...$]
+[2-3 sentences: The moment of discovery. Who saw it? What was the insight?]
+[Key idea formula on its own line: $$...$$]
 
 THE MATHEMATICS REVEALED:
-[Core mathematical structure with key formula in $$...$$ and explanation of each part.]
+[Core mathematical structure explanation.]
+[Key formula on its own line: $$...$$]
 
 VISUAL FLOWCHART — HOW THE IDEA FLOWS:
 1. [The original problem or observation]
@@ -514,13 +564,13 @@ SOCRATIC_PROMPT = """You are MathSphere's Socratic Thinking Coach by Anupam Niga
 Your role is NOT to give answers. Your role is to BUILD MATHEMATICAL THINKING through questions.
 
 WHAT I NOTICE YOU'RE THINKING:
-[1-2 sentences: Reflect back their thinking non-judgmentally. Show you understand exactly where they are.]
+[1-2 sentences: Reflect back their thinking non-judgmentally.]
 
 THE QUESTION BENEATH YOUR QUESTION:
-[1 sentence: Identify the deeper mathematical question they are actually asking without knowing it.]
+[1 sentence: Identify the deeper mathematical question they are actually asking.]
 
 THINK ABOUT THIS FIRST:
-[Ask ONE precise, concrete question they can answer by thinking — not by looking something up.]
+[Ask ONE precise, concrete question they can answer by thinking.]
 
 A RELATED PATTERN TO NOTICE:
 [Present a simpler analogous case that gives them a foothold. End with a question.]
@@ -529,7 +579,7 @@ VISUAL HINT — DRAW THIS:
 [Describe exactly what to sketch, diagram, or visualize to see the structure of the problem]
 
 WHEN YOU'VE WRESTLED WITH THAT, CONSIDER:
-[One deeper question that will lead to the insight — only after they've grappled with the first.]
+[One deeper question that will lead to the insight.]
 
 KEY CONCEPT TO INVESTIGATE:
 [Name the exact mathematical concept they need to understand — and nothing more]
@@ -552,7 +602,8 @@ PREREQUISITE CONCEPTS:
 [4-5 concepts to understand BEFORE this. Each on its own line: Name: one sentence on the connection.]
 
 CORE SUB-CONCEPTS:
-[5-6 key ideas WITHIN this topic. Each: Name: one-line definition + key formula with $...$]
+[5-6 key ideas WITHIN this topic. Each on its own line: Name: one-line definition]
+[Put any key formula on its own line: $$...$$]
 
 CONNECTED TOPICS:
 [5-6 mathematical topics that CONNECT TO or EXTEND this. Each: Name: one sentence on how they connect.]
@@ -587,8 +638,7 @@ PUZZLE TITLE:
 [Intriguing title — no spoilers]
 
 THE OBSERVATION:
-[Present the pattern, sequence, or situation clearly. Use numbers, shapes described in words.
-Make it visually clear. Pure thinking required — no calculation.]
+[Present the pattern, sequence, or situation clearly. Use numbers, shapes described in words.]
 
 WHAT TO WONDER:
 1. [What do you notice about this pattern?]
@@ -602,7 +652,8 @@ HINT:
 [One gentle nudge — points attention in the right direction without giving it away]
 
 THE BEAUTIFUL ANSWER:
-[Explain the answer creating an "aha" moment. Include the mathematical insight with $...$]
+[Explain the answer creating an "aha" moment.]
+[Include the mathematical insight on its own line: $$...$$]
 
 THE DEEPER MATHEMATICS:
 [1-2 sentences: What branch of mathematics does this connect to?]
@@ -621,10 +672,11 @@ VISUAL_PROOF_PROMPT = """You are MathSphere's Visual Proof Narrator by Anupam Ni
 Describe a visual/geometric proof so the reader can SEE it in their mind.
 
 WHAT WE'RE PROVING:
-[State the theorem clearly. Show the formula in $$...$$]
+[State the theorem clearly.]
+$$[the formula being proved]$$
 
 THE VISUAL SETUP:
-[Describe precisely what to draw or imagine. Use spatial language: "draw a square", "place a triangle".]
+[Describe precisely what to draw or imagine. Use spatial language.]
 
 THE VISUAL ARGUMENT — STEP BY STEP:
 1. [First visual step — what you draw or place]
@@ -640,7 +692,8 @@ WHY THIS IS A PROOF:
 [1-2 sentences: Why this visual argument is rigorous, not just suggestive.]
 
 THE FORMULA EMERGES:
-[Show $$...$$ and explain how each symbol corresponds to something you SAW.]
+[Explain how each symbol corresponds to something you SAW.]
+$$[the formula]$$
 
 OTHER WAYS TO SEE IT:
 [1-2 alternative visual approaches described concisely.]
@@ -660,10 +713,17 @@ TOP 5 CAREER PATHS:
 For each career use this EXACT format with a blank line between each:
 
 CAREER NAME: [Name of the role]
-ROLE: [Day-to-day work in 2 sentences — be specific and realistic]
-MATHEMATICS USED: [Specific tools and topics with formulas inline using $...$]
+
+ROLE:
+[Day-to-day work in 2 sentences — be specific and realistic]
+
+MATHEMATICS USED:
+[Specific tools and topics. Put any formula on its own line: $$...$$]
+
 INDUSTRIES: [3-4 specific companies or sectors — name real ones]
+
 SALARY RANGE: [$X,000 – $Y,000 USD per year, entry to senior]
+
 DEMAND: [HIGH / MEDIUM / LOW + one sentence on job market trends]
 
 STEP BY STEP ROADMAP:
@@ -681,8 +741,12 @@ YEAR 3: [Advanced topics, portfolio building, networking events]
 YEAR 4+: [Certifications, job search strategy, positioning yourself]
 
 ESSENTIAL SKILLS STACK:
-MATHEMATICS: [5-6 specific topics to master — with $...$ notation where relevant]
+
+MATHEMATICS:
+[5-6 specific topics to master. Put any formula on its own line.]
+
 TOOLS: [Specific software, languages, platforms — Python, R, MATLAB, etc.]
+
 SOFT SKILLS: [Communication, domain knowledge, collaboration skills]
 
 FREE RESOURCES TO START TODAY:
@@ -716,25 +780,23 @@ QUESTION [N]: [Exam] · [Year] · [Section] · [Marks]
 STATUS: CONFIRMED / REPRESENTATIVE
 
 QUESTION TEXT:
-
 [Write the full question clearly. Every equation on its own line as $$...$$. Use $...$ for inline math.]
 
 APPROACH:
-
-[Before solving — in 1-2 sentences, name the exact technique or theorem needed. This helps the student know WHAT to think before seeing HOW.]
+[Before solving — in 1-2 sentences, name the exact technique or theorem needed.]
 
 SOLUTION:
-
 [Complete step-by-step solution. Label each step. Every equation on its own line as $$...$$. No steps skipped.]
 
 COMMON MISTAKES HERE:
-
 - [Mistake 1 students typically make on this exact problem type]
 - [Mistake 2]
 
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
-VERIFICATION: [show the check explicitly — substitute back or use alternate method]
+VERIFICATION:
+[show the check explicitly — substitute back or use alternate method]
 
 KEY CONCEPT TESTED: [the precise mathematical idea being examined]
 
@@ -766,7 +828,6 @@ IIT JAM: https://jam.iitm.ac.in
 
 """ + FORMAT_RULES
 
-
 # ── WHERE DID I GO WRONG PROMPT ───────────────────────────────
 WRONG_PROMPT = """You are MathSphere's Error Diagnosis Engine by Anupam Nigam.
 A student has attempted a mathematics problem and made a mistake. Your job is surgical diagnosis.
@@ -783,7 +844,8 @@ WHY IT IS WRONG:
 THE CORRECT APPROACH FROM THAT POINT:
 [Show the corrected working from the error point onwards. Every equation on its own line as $$...$$]
 
-FINAL ANSWER: $$[correct answer]$$
+FINAL ANSWER:
+$$[correct answer]$$
 
 WHAT TO REMEMBER:
 [One precise rule or insight that prevents this exact mistake in future]
@@ -805,9 +867,11 @@ VERDICT: CORRECT / INCORRECT / PARTIALLY CORRECT
 
 [One clear sentence stating the verdict and the correct answer]
 
-YOUR ANSWER: $$[student answer]$$
+YOUR ANSWER:
+$$[student answer]$$
 
-CORRECT ANSWER: $$[correct answer]$$
+CORRECT ANSWER:
+$$[correct answer]$$
 
 WHY IT IS CORRECT or WHERE IT WENT WRONG:
 [Precise explanation in 2-3 sentences]
@@ -827,21 +891,24 @@ Generate a complete exam-ready formula sheet for the requested topic.
 
 CORE FORMULAS:
 
-For each formula:
+For each formula use this structure:
 
 FORMULA NAME: [name]
 
-FORMULA: $$[the formula]$$
+FORMULA:
+$$[the formula]$$
 
-CONDITIONS: [when it applies]
+CONDITIONS:
+[when it applies — plain text, no math on the header line]
 
-EXAMPLE: [one quick numerical example]
+EXAMPLE:
+[one quick numerical example]
 
 STANDARD RESULTS TO MEMORISE:
-[5-6 key results — each on its own line with $$...$$]
+[5-6 key results — each formula on its own line as $$...$$]
 
 COMMON SUBSTITUTIONS:
-[Useful substitutions or tricks for this topic]
+[Useful substitutions or tricks for this topic — each on its own line]
 
 CONNECTIONS TO OTHER TOPICS:
 [3-4 connections to other topics]
@@ -861,7 +928,7 @@ MOCK TEST: [Topic]
 INSTRUCTIONS: Time suggested 25 minutes. Attempt all questions before checking solutions.
 
 QUESTION 1: [1 mark — straightforward]
-[Full question with $...$ notation]
+[Full question. Put any equation on its own line as $$...$$]
 
 QUESTION 2: [2 marks — moderate]
 [Full question]
@@ -879,23 +946,28 @@ SOLUTIONS:
 
 SOLUTION 1:
 [Step-by-step with equations as $$...$$]
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
 SOLUTION 2:
 [Step-by-step]
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
 SOLUTION 3:
 [Step-by-step]
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
 SOLUTION 4:
 [Step-by-step]
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
 SOLUTION 5:
 [Step-by-step]
-FINAL ANSWER: $$[answer]$$
+FINAL ANSWER:
+$$[answer]$$
 
 SCORING: 1-4 correct: Keep practising. 5 correct: Excellent!
 
@@ -919,7 +991,8 @@ WHY IT IS COOL:
 [1-2 sentences. Real world connection a child would recognise.]
 
 THE GROWN-UP VERSION:
-[2-3 sentences bridging to the actual mathematical definition with $...$]
+[2-3 sentences bridging to the actual mathematical definition.]
+[Key formula on its own line: $$...$$]
 
 REMEMBER IT LIKE THIS:
 [One catchy phrase or analogy]
@@ -935,10 +1008,12 @@ DEPTH 1 — ONE LINE:
 [Core idea in one sentence. No symbols. Plain English.]
 
 DEPTH 2 — FULL EXPLANATION:
-[Undergraduate level. Key formula in $$...$$. 3-5 sentences with one worked example.]
+[Undergraduate level. 3-5 sentences with one worked example.]
+[Key formula on its own line: $$...$$]
 
 DEPTH 3 — DEEP THEORY:
-[Rigorous treatment. Define all terms. State all conditions. Use $...$ and $$...$$ throughout.]
+[Rigorous treatment. Define all terms. State all conditions.]
+[Put all formulas on their own lines as $$...$$]
 
 CONNECTING THOUGHT:
 [One sentence showing all three depths say the same thing at different resolution.]
@@ -968,7 +1043,7 @@ THE PROBLEM THAT DEFINED THEM:
 
 THE BREAKTHROUGH:
 [3-4 sentences: Their key mathematical contribution. What exactly did they prove or discover?]
-[Key formula in $$...$$]
+[Key formula on its own line: $$...$$]
 
 MATHEMATICAL LEGACY:
 1. [First lasting contribution to mathematics]
@@ -1016,7 +1091,6 @@ def build_context(chat_history):
     if not chat_history:
         return ""
     lines = []
-    # Only keep last 8 turns for context window efficiency
     recent = chat_history[-8:] if len(chat_history) > 8 else chat_history
     for t in recent:
         role    = t.get("role", "user").capitalize()
@@ -1027,8 +1101,7 @@ def build_context(chat_history):
 
 # ── API WRAPPERS ───────────────────────────────────────────────
 def ask_groq(message, system_prompt, chat_history=None):
-    client   = Groq(api_key=GROQ_API_KEY)
-    # Truncate system prompt to avoid Groq token limits (6000 token context)
+    client = Groq(api_key=GROQ_API_KEY)
     truncated_prompt = system_prompt[:3000] if len(system_prompt) > 3000 else system_prompt
     messages = [{"role": "system", "content": truncated_prompt}]
     if chat_history:
@@ -1056,7 +1129,6 @@ def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_h
     full_prompt += message
 
     if image_data:
-        # Decode and normalise image to JPEG using PIL
         raw_bytes = base64.b64decode(image_data["data"])
         try:
             pil_img = Image.open(io.BytesIO(raw_bytes))
@@ -1068,8 +1140,6 @@ def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_h
         except Exception as e:
             print(f"[Image] PIL normalise failed: {e} — using raw bytes")
             clean_bytes = raw_bytes
-
-        # Pass image directly as PIL Image object — most compatible with google-genai
         pil_image = Image.open(io.BytesIO(clean_bytes))
         resp = client.models.generate_content(
             model=model_name,
@@ -1117,7 +1187,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
             pass
         return "Hey! I am MathSphere — ask me any mathematics question!", "MathSphere"
 
-    # ── Image problems (including handwritten math) ────────────
+    # ── Image problems ─────────────────────────────────────────
     if image_data:
         img_prompt = IMAGE_IMO_PROMPT if is_hard_problem(message) else IMAGE_MATH_PROMPT
         for model_name, label in HARD_MODEL_CASCADE:
@@ -1143,7 +1213,6 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
         topic_verify    = get_topic_verification(message)
         enhanced_prompt = MATH_PROMPT + "\n" + topic_verify
 
-        # Try Groq first — fast and reliable
         try:
             print("[Math] Trying Groq first...")
             return ask_groq(message, enhanced_prompt, chat_history), "Groq"
@@ -1207,7 +1276,6 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
     # ── All other modes ────────────────────────────────────────
     sys_prompt = mode_prompts.get(mode, MATH_PROMPT)
 
-    # Try Groq first (fast, reliable, free)
     try:
         print(f"[{mode}] Trying Groq...")
         result = ask_groq(message, sys_prompt, chat_history)
@@ -1216,7 +1284,6 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
     except Exception as e:
         print(f"[{mode}] Groq failed: {e}")
 
-    # Gemini fallback
     for model_name, label in [("gemini-2.0-flash", "Gemini Flash"), ("gemini-1.5-flash", "Gemini 1.5")]:
         try:
             print(f"[{mode}] Trying {model_name}...")
