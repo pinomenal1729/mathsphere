@@ -71,6 +71,9 @@
         el.innerHTML = [
             // Header
             '<div class="eng-header">',
+            '  <button class="eng-hamburger" id="eng-hamburger" onclick="window.engModule.toggleSidebar()" aria-label="Menu">',
+            '    <span></span><span></span><span></span>',
+            '  </button>',
             '  <div class="eng-header-brand">',
             '    <div class="eng-logo-mark">E</div>',
             '    <div>',
@@ -180,16 +183,44 @@
             '</div>'
         ].join('');
         document.body.appendChild(el);
-    }
     
-    // ══════════════════════════════════════════════════════════════
-    //  SYLLABUS LOADER
+        // Mobile overlay — tapping it closes the sidebar drawer
+        var overlay = document.createElement('div');
+        overlay.id = 'eng-mobile-overlay';
+        overlay.className = 'eng-mobile-overlay';
+        overlay.addEventListener('click', function() { closeSidebar(); });
+        document.body.appendChild(overlay);
+    }
     // ══════════════════════════════════════════════════════════════
     function loadSyllabus() {
         fetch('/eng/syllabus')
             .then(function(r){ return r.json(); })
             .then(function(data){ state.syllabus = data; })
             .catch(function(e){ console.warn('Syllabus load failed', e); });
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    //  MOBILE SIDEBAR DRAWER
+    // ══════════════════════════════════════════════════════════════
+    function toggleSidebar() {
+        var sidebar = document.getElementById('eng-app').querySelector('.eng-sidebar');
+        var overlay = document.getElementById('eng-mobile-overlay');
+        if (!sidebar) return;
+        var isOpen = sidebar.classList.contains('mobile-open');
+        if (isOpen) {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('visible');
+        } else {
+            sidebar.classList.add('mobile-open');
+            if (overlay) overlay.classList.add('visible');
+        }
+    }
+    
+    function closeSidebar() {
+        var sidebar = document.getElementById('eng-app').querySelector('.eng-sidebar');
+        var overlay = document.getElementById('eng-mobile-overlay');
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('visible');
     }
     
     // ══════════════════════════════════════════════════════════════
@@ -325,6 +356,7 @@
         renderSubtopics(topicKey);
         clearSectionBar();
         clearFilters();
+        closeSidebar(); // close drawer on mobile after topic selected
     
         // For Subject Connections tab — show topic-level connections immediately
         if (state.activeTab === 'connections') {
@@ -632,7 +664,8 @@
         selectSection:   selectSection,
         fetchPYQ:        fetchPYQ,
         fetchMockTest:   fetchMockTest,
-        askAI:           askAI
+        askAI:           askAI,
+        toggleSidebar:   toggleSidebar
     };
     
     })();
