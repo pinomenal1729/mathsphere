@@ -300,14 +300,21 @@
         var list = document.getElementById('eng-topic-list');
         if (!list || !state.syllabus || !state.syllabus[sem]) { if(list) list.innerHTML = ''; return; }
         var topics = state.syllabus[sem].topics;
-        var html = '';
+        list.innerHTML = '';
         Object.keys(topics).forEach(function(key) {
             var t = topics[key];
-            html += '<div class="eng-topic-group">';
-            html += '<button class="eng-topic-btn" data-topic="' + key + '" onclick="window.engModule.selectTopic(\'' + key + '\',this)">' + t.label + '</button>';
-            html += '</div>';
+            var btn = document.createElement('button');
+            btn.className = 'eng-topic-btn';
+            btn.setAttribute('data-topic', key);
+            btn.textContent = t.label;
+            btn.addEventListener('click', function() {
+                selectTopic(key, btn);
+            });
+            var group = document.createElement('div');
+            group.className = 'eng-topic-group';
+            group.appendChild(btn);
+            list.appendChild(group);
         });
-        list.innerHTML = html;
     }
     
     function selectTopic(topicKey, btn) {
@@ -333,20 +340,24 @@
         var sem = state.syllabus[state.activeSem];
         if (!sem || !sem.topics[topicKey]) { bar.classList.add('hidden'); return; }
     
-        // Don't show subtopics for connections tab — topic level is enough
         if (state.activeTab === 'connections') { bar.classList.add('hidden'); return; }
     
         var subs = sem.topics[topicKey].subtopics;
-        var html = '';
+        bar.innerHTML = '';
         subs.forEach(function(s) {
-            html += '<button class="eng-chip" data-sub="' + s + '" onclick="window.engModule.selectSubtopic(\'' + encodeURIComponent(s) + '\',this)">' + s + '</button>';
+            var btn = document.createElement('button');
+            btn.className = 'eng-chip';
+            btn.setAttribute('data-sub', s);
+            btn.textContent = s;
+            btn.addEventListener('click', function() {
+                selectSubtopic(s, btn);
+            });
+            bar.appendChild(btn);
         });
-        bar.innerHTML = html;
         bar.classList.remove('hidden');
     }
     
-    function selectSubtopic(encodedSub, btn) {
-        var sub = decodeURIComponent(encodedSub);
+    function selectSubtopic(sub, btn) {
         state.activeSubtopic = sub;
         document.querySelectorAll('.eng-chip').forEach(function(b){ b.classList.remove('active'); });
         btn.classList.add('active');
