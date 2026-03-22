@@ -435,7 +435,7 @@
         if (mode === 'learn') payload.section = state.activeSection;
         var endpoint = mode === 'learn' ? '/eng/learn' : '/eng/revision';
         postToAPI(endpoint, payload, function(data) {
-            renderResponse(data.response, data.source, data.references || []);
+            renderResponse(data.response, data.source, data.references || [], data.prerequisites || []);
         });
     }
     
@@ -600,13 +600,26 @@
         setOutput('<div class="eng-loading"><div class="eng-spinner"></div>' + (msg || 'Loading...') + '</div>');
     }
     
-    function renderResponse(text, source, refs) {
+    function renderResponse(text, source, refs, prereqs) {
         var rendered = '';
         if (typeof renderMathContent === 'function') {
             rendered = renderMathContent(text);
         } else {
             rendered = '<p class="vr-para">' + text.replace(/\n{2,}/g, '</p><p class="vr-para">').replace(/\n/g, '<br>') + '</p>';
         }
+    
+        // Prerequisites banner
+        var prereqHtml = '';
+        if (prereqs && prereqs.length) {
+            var pills = prereqs.map(function(p) {
+                return '<span style="display:inline-block;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;padding:3px 10px;border-radius:9999px;font-size:11px;font-family:var(--font-mono);margin:2px;">' + p + '</span>';
+            }).join('');
+            prereqHtml = '<div style="margin-bottom:16px;padding:12px 16px;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.15);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;">';
+            prereqHtml += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3b82f6;margin-bottom:8px;">Prerequisites for this topic</div>';
+            prereqHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + pills + '</div>';
+            prereqHtml += '</div>';
+        }
+    
         var sourceHtml = source ? '<div style="margin-top:12px;font-size:10px;font-family:var(--font-mono);color:var(--text-disabled)">Source: ' + source + '</div>' : '';
         var refsHtml = '';
         if (refs && refs.length) {
@@ -616,7 +629,7 @@
             }).join('');
             refsHtml = '<div class="eng-refs"><div class="eng-refs-title">References &amp; Further Reading</div><div class="eng-refs-list">' + links + '</div></div>';
         }
-        setOutput('<div class="eng-response">' + rendered + sourceHtml + '</div>' + refsHtml);
+        setOutput(prereqHtml + '<div class="eng-response">' + rendered + sourceHtml + '</div>' + refsHtml);
         var out = document.getElementById('eng-output');
         if (out && typeof typesetEl === 'function') typesetEl(out);
         else if (window.MathJax && window.MathJax.typesetPromise) {
