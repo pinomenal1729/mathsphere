@@ -118,6 +118,7 @@
             // Section buttons (Learn tab)
             '    <div class="eng-section-bar hidden" id="eng-section-bar">',
             '      <button class="eng-sec-btn active" data-sec="definition" onclick="window.engModule.selectSection(\'definition\',this)">Definition</button>',
+            '      <button class="eng-sec-btn"        data-sec="intuition"  onclick="window.engModule.selectSection(\'intuition\',this)">Visual Intuition</button>',
             '      <button class="eng-sec-btn"        data-sec="theorem"    onclick="window.engModule.selectSection(\'theorem\',this)">Theorems</button>',
             '      <button class="eng-sec-btn"        data-sec="examples"   onclick="window.engModule.selectSection(\'examples\',this)">Examples</button>',
             '      <button class="eng-sec-btn"        data-sec="practice"   onclick="window.engModule.selectSection(\'practice\',this)">Practice</button>',

@@ -542,6 +542,63 @@ MARKS BREAKDOWN:
 
 ANSWER:
 $$[final answer — no working]$$
+""",
+        "intuition": f"""You are explaining {subtopic} to a B.Tech engineering student who is confused
+and wants to understand what is actually happening — not just formulas.
+
+Your goal: build the picture in their mind BEFORE showing any formula.
+Write like 3Blue1Brown — warm, visual, story-driven, wonder-filled.
+Every analogy must use something an engineering student already knows physically.
+
+THE STORY:
+[2-3 sentences: the real human problem or physical situation that made this concept necessary.
+Name a real engineer, scientist, or physical phenomenon. Make it feel like history, not a textbook.]
+
+THE PHYSICAL ANALOGY:
+[3-4 sentences: connect this concept to something the student has physically experienced.
+Use: springs, circuits, water flow, rotating shafts, signals, heat, bridges — things engineering students know.
+No abstract mathematics yet. Just the feeling of what is happening.]
+
+WHAT YOUR BRAIN IS ACTUALLY DOING:
+[2-3 sentences: describe the mental image or geometric picture.
+"Picture this..." or "Imagine you are..." — make them see it with eyes closed.]
+
+THE KEY INSIGHT IN ONE LINE:
+[One sentence capturing the entire concept without a single symbol.
+This is the sentence they will remember 10 years from now.]
+
+NOW THE MATHEMATICS:
+[Now introduce the formula — but explain every symbol as something from the analogy above.
+Each symbol should map to something physical they just visualised.]
+
+$$[the key formula]$$
+
+WHY EACH PART OF THE FORMULA MAKES SENSE:
+[Go through each term: "The [symbol] represents [physical thing from the analogy]..."]
+
+THE MOMENT IT CLICKS:
+[Describe the exact moment of understanding — the "aha" — using the analogy.
+What changes when you truly understand this? What can you now see that you could not before?]
+
+ENGINEERING CONNECTION:
+[2-3 sentences: exactly where this appears in their engineering degree.
+Name the specific subject, the specific equation, the specific application.
+"In your 3rd semester Control Systems course, this concept appears as..."]
+
+WHAT HAPPENS WITHOUT THIS CONCEPT:
+[1-2 sentences: what engineering problems become impossible to solve without this mathematics.
+Make them feel why this matters — not just that it does.]
+
+INTUITION CHECK:
+[One question they can answer purely from the picture — no formula needed.
+If they can answer it, they truly understood. If not, re-read the analogy.]
+
+VISUAL RESOURCE:
+[One real URL — prefer 3Blue1Brown, NPTEL, or MIT OCW video for this exact topic]
+
+TONE: Warm, curious, enthusiastic. Like a brilliant professor who genuinely loves this topic
+and cannot wait to show you why it is beautiful. Never condescending. Never dry.
+Start with the story — never with a formula.
 """
     }
     return ENG_CONTEXT + "\n" + ENG_FORMAT + "\n\n" + sections.get(section, sections["definition"])

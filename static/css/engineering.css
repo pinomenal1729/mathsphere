@@ -675,3 +675,24 @@
     .eng-tabs { overflow-x: auto; flex-wrap: nowrap; }
     .eng-tab  { white-space: nowrap; flex-shrink: 0; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   VISUAL INTUITION SECTION BUTTON — purple accent
+══════════════════════════════════════════════════════════════ */
+.eng-sec-btn[data-sec="intuition"].active {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #7c3aed;
+}
+.eng-sec-btn[data-sec="intuition"]:hover:not(.active) {
+    color: #7c3aed;
+    border-color: rgba(124,58,237,0.4);
+    background: rgba(124,58,237,0.08);
+}
+
+/* Intuition response — warm purple left border */
+.eng-response .intuition-block {
+    border-left: 3px solid #7c3aed;
+    padding-left: 16px;
+    margin: 16px 0;
+}
