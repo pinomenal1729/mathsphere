@@ -88,6 +88,7 @@
             '    <button class="eng-tab"        data-tab="connections" onclick="window.engModule.switchTab(\'connections\',this)">Subject Connections</button>',
             '    <button class="eng-tab"        data-tab="pyq"         onclick="window.engModule.switchTab(\'pyq\',this)">PYQ Bank</button>',
             '    <button class="eng-tab"        data-tab="mocktest"    onclick="window.engModule.switchTab(\'mocktest\',this)">Mock Test</button>',
+            '    <button class="eng-tab"        data-tab="misconception" onclick="window.engModule.switchTab(\'misconception\',this)">Misconception Detector</button>',
             '    <button class="eng-tab"        data-tab="ask"         onclick="window.engModule.switchTab(\'ask\',this)">Ask AI</button>',
             '  </div>',
             '  <div class="eng-header-right">',
@@ -280,7 +281,7 @@
         toggleEl('eng-pyq-filters',  tab === 'pyq' && state.activeSubtopic);
         toggleEl('eng-mock-config',  tab === 'mocktest' && state.activeSubtopic);
         toggleEl('eng-ask-area',     tab === 'ask');
-        toggleEl('eng-subtopic-bar', tab !== 'ask' && state.activeTopic);
+        toggleEl('eng-subtopic-bar', tab !== 'ask' && tab !== 'misconception' && state.activeTopic);
     
         if (state.activeSubtopic) {
             if (tab === 'revision')    fetchContent('revision');
@@ -290,6 +291,14 @@
     
         if (tab === 'ask') {
             setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px">?</div><div class="eng-welcome-title">Ask Engineering AI</div><div class="eng-welcome-sub">Ask any B.Tech mathematics question. I know you are studying for semester exams and will answer at exactly that level.</div></div>');
+        }
+    
+        if (tab === 'misconception') {
+            if (state.activeTopic) {
+                fetchMisconceptions();
+            } else {
+                setOutput(buildMisconceptionWelcome());
+            }
         }
     
         if (tab === 'connections' && !state.activeSubtopic) {
@@ -309,6 +318,90 @@
             '<div class="eng-welcome-sub">Discover exactly where your mathematics appears in Circuits, Mechanics, Control Systems, Signals, and more. Select a topic to see its real engineering applications.</div>',
             '</div>'
         ].join('');
+    }
+    
+    function buildMisconceptionWelcome() {
+        return [
+            '<div class="eng-welcome">',
+            '<div class="eng-welcome-symbol" style="font-size:36px">&#x26A0;</div>',
+            '<div class="eng-welcome-title">Misconception Detector</div>',
+            '<div class="eng-welcome-sub">Select a semester and topic from the left. You will be asked diagnostic questions designed to reveal hidden wrong beliefs you may carry about that topic — beliefs that cost marks in university examinations.</div>',
+            '</div>'
+        ].join('');
+    }
+    
+    function fetchMisconceptions() {
+        if (!state.activeTopic) return;
+        showLoading('Loading diagnostic questions for ' + getTopicLabel(state.activeTopic) + '...');
+        postToAPI('/eng/misconceptions', { topic: state.activeTopic }, function(data) {
+            if (data.questions && data.questions.length) {
+                renderMisconceptionQuestions(data.questions);
+            } else {
+                setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px">&#x26A0;</div><div class="eng-welcome-title">No questions yet</div><div class="eng-welcome-sub">Misconception questions for this topic are being developed. Try another topic.</div></div>');
+            }
+        });
+    }
+    
+    function renderMisconceptionQuestions(questions) {
+        var dangerColors = { HIGH: '#ef4444', CRITICAL: '#dc2626', MEDIUM: '#f59e0b' };
+        var html = '<div style="padding:4px 0;">';
+        html += '<div style="margin-bottom:20px;">';
+        html += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#ef4444;margin-bottom:4px;">Misconception Detector</div>';
+        html += '<div style="font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;">' + getTopicLabel(state.activeTopic) + '</div>';
+        html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:6px;line-height:1.6;">Answer each question in your own words. Do not look up the answer — your first instinct is what matters. The AI will analyse your thinking and identify any misconceptions you may be carrying.</div>';
+        html += '</div>';
+    
+        questions.forEach(function(q, i) {
+            var color = dangerColors[q.danger] || '#f59e0b';
+            html += '<div style="margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" id="mc-card-' + q.id + '">';
+            // Header
+            html += '<div style="background:' + color + '14;border-left:3px solid ' + color + ';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">';
+            html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">Question ' + (i+1) + '</div>';
+            html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:9999px;background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44;">' + q.danger + ' risk</div>';
+            html += '</div>';
+            // Question text
+            html += '<div style="background:var(--bg-surface);padding:14px 16px;">';
+            html += '<div style="font-size:13.5px;color:var(--text-primary);line-height:1.75;margin-bottom:12px;">' + q.question + '</div>';
+            // Answer textarea
+            html += '<textarea id="mc-answer-' + q.id + '" placeholder="Write your answer here — in your own words, no formulas needed..." style="width:100%;min-height:80px;background:var(--bg-raised);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;font-family:var(--font-sans);resize:vertical;outline:none;line-height:1.6;"></textarea>';
+            html += '<button onclick="window.engModule.submitMisconception(\'' + q.id + '\')" style="margin-top:10px;padding:8px 20px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;font-size:12px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">Diagnose My Thinking</button>';
+            html += '<div id="mc-result-' + q.id + '" style="margin-top:12px;"></div>';
+            html += '</div>';
+            html += '</div>';
+        });
+    
+        html += '</div>';
+        setOutput(html);
+    }
+    
+    function submitMisconception(questionId) {
+        var textarea = document.getElementById('mc-answer-' + questionId);
+        if (!textarea) return;
+        var answer = textarea.value.trim();
+        if (!answer) {
+            textarea.style.borderColor = '#ef4444';
+            textarea.placeholder = 'Please write your answer first...';
+            return;
+        }
+        var resultDiv = document.getElementById('mc-result-' + questionId);
+        if (resultDiv) {
+            resultDiv.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary);font-size:12px;font-family:var(--font-mono);padding:8px 0;"><div class="eng-spinner"></div>Analysing your thinking...</div>';
+        }
+        postToAPI('/eng/diagnose', {
+            topic:       state.activeTopic,
+            question_id: questionId,
+            answer:      answer
+        }, function(data) {
+            if (resultDiv) {
+                var rendered = typeof renderMathContent === 'function' ? renderMathContent(data.response) : data.response.replace(/\n/g, '<br>');
+                resultDiv.innerHTML = '<div style="background:var(--bg-raised);border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.8;color:var(--text-secondary);">' + rendered + '</div>';
+                var out = document.getElementById('eng-output');
+                if (out && typeof typesetEl === 'function') typesetEl(out);
+                else if (window.MathJax && window.MathJax.typesetPromise) {
+                    setTimeout(function() { window.MathJax.typesetPromise([out]).catch(function(){}); }, 50);
+                }
+            }
+        });
     }
     
     // ══════════════════════════════════════════════════════════════
@@ -358,6 +451,12 @@
         clearSectionBar();
         clearFilters();
         closeSidebar(); // close drawer on mobile after topic selected
+    
+        // If misconception tab is active, load questions for this topic immediately
+        if (state.activeTab === 'misconception') {
+            fetchMisconceptions();
+            return;
+        }
     
         // For Subject Connections tab — show topic-level connections immediately
         if (state.activeTab === 'connections') {
@@ -669,17 +768,18 @@
     //  PUBLIC API
     // ══════════════════════════════════════════════════════════════
     window.engModule = {
-        chooseMode:      chooseMode,
-        showLanding:     showLanding,
-        switchTab:       switchTab,
-        selectSem:       selectSem,
-        selectTopic:     selectTopic,
-        selectSubtopic:  selectSubtopic,
-        selectSection:   selectSection,
-        fetchPYQ:        fetchPYQ,
-        fetchMockTest:   fetchMockTest,
-        askAI:           askAI,
-        toggleSidebar:   toggleSidebar
+        chooseMode:           chooseMode,
+        showLanding:          showLanding,
+        switchTab:            switchTab,
+        selectSem:            selectSem,
+        selectTopic:          selectTopic,
+        selectSubtopic:       selectSubtopic,
+        selectSection:        selectSection,
+        fetchPYQ:             fetchPYQ,
+        fetchMockTest:        fetchMockTest,
+        askAI:                askAI,
+        toggleSidebar:        toggleSidebar,
+        submitMisconception:  submitMisconception
     };
     
     })();

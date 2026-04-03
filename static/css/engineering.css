@@ -696,3 +696,21 @@
     padding-left: 16px;
     margin: 16px 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MISCONCEPTION DETECTOR TAB — red accent
+══════════════════════════════════════════════════════════════ */
+.eng-tab[data-tab="misconception"].active {
+    color: #ef4444;
+    background: rgba(239,68,68,0.08);
+}
+.eng-tab[data-tab="misconception"]:hover:not(.active) {
+    color: #ef4444;
+}
+
+/* Misconception answer textarea focus */
+#eng-output textarea:focus {
+    border-color: rgba(239,68,68,0.4) !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.06);
+}

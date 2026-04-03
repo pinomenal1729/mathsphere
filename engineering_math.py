@@ -998,3 +998,483 @@ def ask_eng():
         return jsonify({"response": response, "source": source})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ══════════════════════════════════════════════════════════════
+#  MISCONCEPTION DATABASE
+#  Based on mathematics education research
+#  Each entry: the misconception, the diagnostic question,
+#  and the correct understanding
+# ══════════════════════════════════════════════════════════════
+MISCONCEPTIONS = {
+    "diff_calc": [
+        {
+            "id": "DC01",
+            "misconception": "If a function is continuous at a point, it must be differentiable there",
+            "danger": "HIGH",
+            "question": "The function f(x) = |x| is continuous at x = 0. Is it differentiable at x = 0? Explain why or why not in your own words.",
+            "correct": "Continuity does NOT imply differentiability. f(x)=|x| is continuous at x=0 but has a sharp corner — the left derivative is -1 and the right derivative is +1, so the derivative does not exist. Differentiability implies continuity but not the other way around.",
+            "why_students_believe_it": "Students confuse the theorem 'differentiable implies continuous' with its converse, which is false."
+        },
+        {
+            "id": "DC02",
+            "misconception": "L'Hopital's Rule can be applied to any limit",
+            "danger": "HIGH",
+            "question": "Can you apply L'Hopital's Rule to find lim(x→2) (x²-4)/(x-2)? What must you check first?",
+            "correct": "L'Hopital's Rule applies ONLY when the limit gives an indeterminate form 0/0 or ∞/∞. The limit (x²-4)/(x-2) at x=2 gives 0/0 — so L'Hopital applies. But you must ALWAYS verify the indeterminate form first. Applying it to non-indeterminate forms gives wrong answers.",
+            "why_students_believe_it": "Students see L'Hopital as a shortcut and apply it without checking conditions."
+        },
+        {
+            "id": "DC03",
+            "misconception": "A function can have at most one tangent line at any point",
+            "danger": "MEDIUM",
+            "question": "If f'(c) = 0 at some point c, what does the tangent line look like? Does the function have to have a maximum or minimum at c?",
+            "correct": "f'(c) = 0 means a horizontal tangent — but this could be a maximum, minimum, OR a point of inflection (like f(x)=x³ at x=0). Students must check the second derivative or sign change of f' to classify critical points.",
+            "why_students_believe_it": "Students memorise 'set derivative to zero to find maxima/minima' without understanding that f'(c)=0 is necessary but not sufficient."
+        },
+        {
+            "id": "DC04",
+            "misconception": "Taylor series always converges to the function",
+            "danger": "HIGH",
+            "question": "If I write the Taylor series of f(x) around x=0 and sum infinitely many terms, do I always get f(x)?",
+            "correct": "No. A function must be analytic for its Taylor series to converge to it. The Taylor series may converge to a different function or diverge entirely outside the radius of convergence. Always state the interval of convergence.",
+            "why_students_believe_it": "Students work only with standard functions (sin, cos, e^x) whose Taylor series converge everywhere, never seeing a counterexample."
+        },
+        {
+            "id": "DC05",
+            "misconception": "The derivative of a product is the product of derivatives",
+            "danger": "CRITICAL",
+            "question": "What is the derivative of f(x) = x² · sin(x)? Write your first instinct, then verify.",
+            "correct": "d/dx(uv) = u·(dv/dx) + v·(du/dx). NOT d/dx(uv) = (du/dx)·(dv/dx). This is the product rule. The correct answer is x²·cos(x) + 2x·sin(x). Students who believe the misconception write 2x·cos(x) and lose full marks.",
+            "why_students_believe_it": "Analogy with exponent rules: (uv)^n = u^n·v^n. Students incorrectly extend this pattern to derivatives."
+        }
+    ],
+    "partial_diff": [
+        {
+            "id": "PD01",
+            "misconception": "Mixed partial derivatives are always equal",
+            "danger": "MEDIUM",
+            "question": "Is it always true that ∂²f/∂x∂y = ∂²f/∂y∂x for any function f(x,y)?",
+            "correct": "Clairaut's theorem states mixed partials are equal ONLY if both mixed partials are continuous in a neighbourhood of the point. This condition is satisfied for most functions in engineering, but it is NOT universally true. Students must state the continuity condition in exams.",
+            "why_students_believe_it": "Clairaut's theorem is taught without emphasis on its conditions."
+        },
+        {
+            "id": "PD02",
+            "misconception": "If both partial derivatives exist, the function is differentiable",
+            "danger": "HIGH",
+            "question": "If ∂f/∂x and ∂f/∂y both exist at a point, does that guarantee f is differentiable there?",
+            "correct": "No. Existence of partial derivatives does NOT imply differentiability. A function can have both partial derivatives existing at a point while being discontinuous there. Differentiability requires the partial derivatives to be continuous.",
+            "why_students_believe_it": "Single-variable analogy: if f'(x) exists, f is differentiable. This does not extend to multiple variables."
+        },
+        {
+            "id": "PD03",
+            "misconception": "Euler's theorem applies to all functions of two variables",
+            "danger": "HIGH",
+            "question": "Can you apply Euler's theorem to f(x,y) = x² + y² + 1? Why or why not?",
+            "correct": "Euler's theorem x·∂f/∂x + y·∂f/∂y = n·f applies ONLY to homogeneous functions of degree n. f(x,y) = x²+y²+1 is NOT homogeneous because of the constant term. Always verify homogeneity first — replace x by tx and y by ty and check if f(tx,ty) = tⁿf(x,y).",
+            "why_students_believe_it": "Students apply Euler's theorem mechanically without checking the homogeneity condition."
+        }
+    ],
+    "integral_calc": [
+        {
+            "id": "IC01",
+            "misconception": "If the integral of f from a to b is zero, then f must be zero",
+            "danger": "HIGH",
+            "question": "If ∫₀^π sin(x) dx = 0... wait, does it? Calculate it. What does a zero integral actually mean geometrically?",
+            "correct": "∫₀^π sin(x) dx = 2, not zero. But ∫₀^{2π} sin(x) dx = 0 even though sin(x) is never identically zero. A zero integral means the positive and negative areas cancel — not that the function is zero. This is a critical geometric misconception.",
+            "why_students_believe_it": "Students think of integration as measuring 'total function value' rather than signed area."
+        },
+        {
+            "id": "IC02",
+            "misconception": "Integration and differentiation always undo each other perfectly",
+            "danger": "MEDIUM",
+            "question": "If F(x) = ∫₀ˣ f(t)dt, is it always true that F'(x) = f(x)?",
+            "correct": "Yes — but only when f is continuous. The Fundamental Theorem of Calculus requires continuity of f. Also: d/dx[∫f(x)dx] = f(x) but ∫[d/dx f(x)]dx = f(x) + C. The constant of integration is critical and students routinely drop it.",
+            "why_students_believe_it": "The relationship is taught as absolute without stating continuity requirements."
+        },
+        {
+            "id": "IC03",
+            "misconception": "The order of integration in double integrals can always be swapped without changing limits",
+            "danger": "CRITICAL",
+            "question": "To change the order of ∫₀¹∫ₓ¹ f(x,y) dy dx, can you just write ∫₀¹∫₀¹ f(x,y) dx dy?",
+            "correct": "No — changing the order of integration ALWAYS requires rewriting the limits by sketching the region. The original integral integrates y from x to 1, and x from 0 to 1. After changing order: y goes from 0 to 1, and x goes from 0 to y. Writing wrong limits is the most common error in this topic.",
+            "why_students_believe_it": "Students think of double integrals as two independent single integrals."
+        },
+        {
+            "id": "IC04",
+            "misconception": "Beta function B(m,n) = B(n,m) means the integral limits are symmetric",
+            "danger": "MEDIUM",
+            "question": "Why is B(m,n) = B(n,m)? Is it because the limits of integration are symmetric?",
+            "correct": "B(m,n) = ∫₀¹ x^(m-1)(1-x)^(n-1)dx. The symmetry B(m,n)=B(n,m) comes from the substitution x→(1-x), not from symmetric limits. Students who believe symmetry comes from limits will make errors when evaluating non-standard Beta integrals.",
+            "why_students_believe_it": "Students see the result is symmetric and assume the reason is symmetry of limits."
+        }
+    ],
+    "linear_algebra": [
+        {
+            "id": "LA01",
+            "misconception": "Eigenvalues are always real numbers",
+            "danger": "HIGH",
+            "question": "Find the eigenvalues of the matrix [[0, -1], [1, 0]]. Are they real?",
+            "correct": "The characteristic equation is λ²+1=0, giving λ=±i — complex eigenvalues. Real eigenvalues are guaranteed ONLY for symmetric matrices (by the spectral theorem). A general matrix can have complex eigenvalues. Stating 'eigenvalues are always real' in an exam loses marks.",
+            "why_students_believe_it": "Most textbook examples use symmetric matrices which always have real eigenvalues."
+        },
+        {
+            "id": "LA02",
+            "misconception": "If AB = 0 then A = 0 or B = 0",
+            "danger": "CRITICAL",
+            "question": "Give an example of two non-zero matrices A and B where AB = 0.",
+            "correct": "A = [[1,0],[0,0]] and B = [[0,0],[0,1]] gives AB = 0 with neither A nor B being zero. This is called zero divisors. The cancellation law of real numbers does NOT apply to matrices. This misconception leads to serious errors in solving matrix equations.",
+            "why_students_believe_it": "Direct analogy from real numbers where ab=0 implies a=0 or b=0."
+        },
+        {
+            "id": "LA03",
+            "misconception": "Rank of a matrix equals the number of non-zero rows",
+            "danger": "HIGH",
+            "question": "What is the rank of the matrix [[1,2,3],[2,4,6],[0,0,0]]?",
+            "correct": "Rank = 1, not 2. Row 2 is twice row 1, so after row reduction it becomes zero. Rank is the number of non-zero rows in ROW ECHELON FORM — not in the original matrix. Students who count non-zero rows in the original matrix get wrong rank values.",
+            "why_students_believe_it": "Students confuse 'non-zero rows in the original matrix' with 'non-zero rows after row reduction'."
+        },
+        {
+            "id": "LA04",
+            "misconception": "A matrix with all non-zero entries is always invertible",
+            "danger": "HIGH",
+            "question": "Is the matrix [[1,2],[2,4]] invertible? All its entries are non-zero.",
+            "correct": "No — det([[1,2],[2,4]]) = 4-4 = 0, so it is singular. A matrix is invertible if and only if its determinant is non-zero. The entries being non-zero has nothing to do with invertibility. Row 2 = 2×Row 1 makes it singular.",
+            "why_students_believe_it": "Students confuse 'non-zero matrix' with 'invertible matrix'."
+        },
+        {
+            "id": "LA05",
+            "misconception": "Cayley-Hamilton theorem means a matrix satisfies its own characteristic equation as a number would",
+            "danger": "MEDIUM",
+            "question": "If the characteristic equation of A is λ²-3λ+2=0, what does Cayley-Hamilton say? Write the matrix equation.",
+            "correct": "Cayley-Hamilton says A²-3A+2I=0 where I is the identity matrix. Students often write A²-3A+2=0 without the identity matrix, which is meaningless — you cannot add a scalar 2 to a matrix. The identity matrix I is mandatory in every term.",
+            "why_students_believe_it": "Students substitute A into the scalar equation without converting scalar terms to matrix form."
+        }
+    ],
+    "ode_first": [
+        {
+            "id": "OF01",
+            "misconception": "Every first order ODE can be solved by separating variables",
+            "danger": "HIGH",
+            "question": "Identify which method applies: dy/dx = (x+y)/(x-y). Can you separate variables here?",
+            "correct": "No — this equation cannot be separated into f(x)dx = g(y)dy form. It is a homogeneous equation, solved by substitution y=vx. Students who try to separate variables will spend exam time going in circles. Always identify the type first.",
+            "why_students_believe_it": "Variables separable is taught first and students default to it for every ODE."
+        },
+        {
+            "id": "OF02",
+            "misconception": "The integrating factor for a linear ODE is always e^(∫P dx)",
+            "danger": "MEDIUM",
+            "question": "The standard form is dy/dx + P(x)y = Q(x). What if the equation is dx/dy + P(y)x = Q(y)?",
+            "correct": "When x is the dependent variable (dx/dy form), the integrating factor is e^(∫P(y)dy) — not e^(∫P dx). Students must first identify which variable is dependent and which is independent before applying the formula.",
+            "why_students_believe_it": "Students memorise the formula for dy/dx form and apply it blindly to all linear ODEs."
+        },
+        {
+            "id": "OF03",
+            "misconception": "An exact equation M dx + N dy = 0 has solution F where ∂F/∂x = N",
+            "danger": "CRITICAL",
+            "question": "For the exact equation M dx + N dy = 0, is ∂F/∂x = M or ∂F/∂x = N?",
+            "correct": "∂F/∂x = M and ∂F/∂y = N. Many students swap M and N when integrating to find F. The test for exactness is ∂M/∂y = ∂N/∂x — if students confuse M and N they will integrate the wrong function.",
+            "why_students_believe_it": "Confusion between the test condition (∂M/∂y = ∂N/∂x) and the integration conditions."
+        }
+    ],
+    "ode_higher": [
+        {
+            "id": "OH01",
+            "misconception": "Particular integral for e^(ax) fails only when a is a root of the auxiliary equation",
+            "danger": "HIGH",
+            "question": "Find PI for y'' - 2y' + y = e^x. What is the auxiliary equation? Is the PI formula e^x/f(1)?",
+            "correct": "The auxiliary equation is (D-1)²=0, so D=1 is a repeated root. The standard formula 1/f(D)·e^(ax) fails when f(a)=0. For a simple root, PI = x·e^(ax)/f'(a). For a repeated root of multiplicity r, PI = x^r·e^(ax)/f^(r)(a). Students only remember the simple root case.",
+            "why_students_believe_it": "Textbooks often show the simple failure case without emphasising the repeated root case."
+        },
+        {
+            "id": "OH02",
+            "misconception": "The general solution is just the particular integral",
+            "danger": "CRITICAL",
+            "question": "You found that y = x²e^x satisfies y'' - 2y' + y = 2e^x. Is this the complete general solution?",
+            "correct": "No — the complete general solution is y = CF + PI = (c₁ + c₂x)e^x + x²e^x. The particular integral alone satisfies the non-homogeneous equation but is not the general solution. Missing the complementary function loses all marks for the general solution.",
+            "why_students_believe_it": "Students focus on finding the particular integral and forget to add the complementary function."
+        },
+        {
+            "id": "OH03",
+            "misconception": "Wronskian being zero at one point means the functions are linearly dependent",
+            "danger": "HIGH",
+            "question": "If W(f,g)(x₀) = 0 at a single point x₀, does that mean f and g are linearly dependent?",
+            "correct": "No. The Wronskian being zero at a single point does not imply linear dependence. For solutions of a linear ODE, the Wronskian is either identically zero everywhere (dependent) or never zero (independent) — it cannot be zero at just one point. This is Abel's theorem.",
+            "why_students_believe_it": "Students check the Wronskian at one convenient point rather than understanding its behaviour as a function."
+        }
+    ],
+    "laplace": [
+        {
+            "id": "LT01",
+            "misconception": "Laplace transform of a product is the product of Laplace transforms",
+            "danger": "CRITICAL",
+            "question": "Is L{t·sin(t)} = L{t} · L{sin(t)} = (1/s²)·(1/(s²+1))?",
+            "correct": "No — L{f·g} ≠ L{f}·L{g}. The correct result for L{t·sin(t)} uses the formula L{tⁿf(t)} = (-1)ⁿ dⁿ/dsⁿ [F(s)]. The product of Laplace transforms gives the Laplace transform of the CONVOLUTION, not the product: L{f*g} = L{f}·L{g}.",
+            "why_students_believe_it": "Analogy with linearity: L{f+g} = L{f}+L{g} makes students think multiplication also distributes."
+        },
+        {
+            "id": "LT02",
+            "misconception": "Initial conditions are applied after finding the general solution",
+            "danger": "HIGH",
+            "question": "When solving an IVP using Laplace transforms, when exactly do the initial conditions y(0) and y'(0) appear?",
+            "correct": "Initial conditions appear DURING the transformation step, not at the end. L{y''} = s²Y(s) - sy(0) - y'(0). Students who forget to include y(0) and y'(0) in the transformed equation will get a wrong Y(s) and consequently a wrong solution.",
+            "why_students_believe_it": "Classical method habit: solve ODE first, apply initial conditions last."
+        },
+        {
+            "id": "LT03",
+            "misconception": "Inverse Laplace transform of F(s)·G(s) is f(t)·g(t)",
+            "danger": "CRITICAL",
+            "question": "Find L⁻¹{1/(s(s+1))} — is it L⁻¹{1/s} · L⁻¹{1/(s+1)} = 1·e^(-t)?",
+            "correct": "No — L⁻¹{F(s)·G(s)} = f(t)*g(t) (convolution), not the product f(t)·g(t). The correct method is partial fractions: 1/(s(s+1)) = 1/s - 1/(s+1), giving L⁻¹ = 1 - e^(-t). Or use the convolution theorem.",
+            "why_students_believe_it": "Students reverse the wrong 'rule' L{f·g} = L{f}·L{g} which itself is incorrect."
+        }
+    ],
+    "vector_calc": [
+        {
+            "id": "VC01",
+            "misconception": "div(curl F) = curl(div F)",
+            "danger": "HIGH",
+            "question": "What is div(curl F)? What is curl(div F)? Are they the same?",
+            "correct": "div(curl F) = ∇·(∇×F) = 0 always (this is an identity). But curl(div F) = ∇×(∇·F) is meaningless — you cannot take the curl of a scalar. div F is a scalar, and curl only applies to vectors. These are completely different operations.",
+            "why_students_believe_it": "Students treat div and curl as interchangeable operators without understanding their input/output types."
+        },
+        {
+            "id": "VC02",
+            "misconception": "A vector field with zero curl is always conservative",
+            "danger": "HIGH",
+            "question": "If curl F = 0 everywhere, is F necessarily a gradient field (conservative)?",
+            "correct": "Only if the domain is simply connected. In a multiply connected domain (like R³ minus a line), curl F = 0 does not imply F is conservative. The classic example is F = (-y/(x²+y²), x/(x²+y²), 0) in R³ minus the z-axis — curl F = 0 but the line integral around the z-axis is non-zero.",
+            "why_students_believe_it": "The theorem is taught without the simply-connected condition."
+        },
+        {
+            "id": "VC03",
+            "misconception": "Green's theorem, Stokes' theorem and Gauss's theorem are three separate unrelated results",
+            "danger": "MEDIUM",
+            "question": "How are Green's theorem, Stokes' theorem, and Gauss's divergence theorem related?",
+            "correct": "All three are special cases of the Generalised Stokes' theorem: ∫∫∫_V dω = ∫∫_∂V ω. Green's theorem is the 2D case. Stokes' theorem relates surface integral of curl to boundary line integral. Gauss's theorem relates volume integral of divergence to surface integral. Understanding this unifying structure prevents confusion about when to apply each.",
+            "why_students_believe_it": "They are taught as three separate named theorems rather than as instances of one principle."
+        }
+    ],
+    "complex_analysis": [
+        {
+            "id": "CA01",
+            "misconception": "An analytic function is just a function you can write a formula for",
+            "danger": "HIGH",
+            "question": "Is f(z) = z̄ (complex conjugate) analytic? It has a simple formula.",
+            "correct": "No — f(z) = z̄ = x - iy fails the Cauchy-Riemann equations: u=x, v=-y gives ∂u/∂x=1 but ∂v/∂y=-1, so CR is violated everywhere. Analytic means the derivative exists in the complex sense — this is a much stronger condition than having a formula. Most 'simple' functions of z̄ are not analytic.",
+            "why_students_believe_it": "Analogy with real analysis where differentiable ≈ has a formula."
+        },
+        {
+            "id": "CA02",
+            "misconception": "Cauchy's theorem means every complex integral around a closed curve is zero",
+            "danger": "CRITICAL",
+            "question": "Is ∮_C dz/z = 0 for C being the unit circle? Apply Cauchy's theorem.",
+            "correct": "No — ∮_C dz/z = 2πi, not zero. Cauchy's theorem requires the function to be ANALYTIC INSIDE AND ON the contour. f(z)=1/z has a singularity at z=0 which is inside the unit circle. The theorem does not apply. This is the most dangerous misconception in complex analysis.",
+            "why_students_believe_it": "Students apply Cauchy's theorem without checking whether singularities lie inside the contour."
+        },
+        {
+            "id": "CA03",
+            "misconception": "The residue at a pole is always the numerator divided by the derivative of the denominator",
+            "danger": "HIGH",
+            "question": "Find the residue of f(z) = 1/(z²(z-1)) at z=0. Is it 1/2z|_{z=0}?",
+            "correct": "z=0 is a pole of order 2, not a simple pole. The formula Res = lim(z→z₀)(z-z₀)f(z) only works for SIMPLE poles. For a pole of order m: Res = 1/(m-1)! · lim_{z→z₀} d^(m-1)/dz^(m-1)[(z-z₀)^m f(z)]. Using the simple pole formula on a higher order pole gives a completely wrong answer.",
+            "why_students_believe_it": "The simple pole formula is taught first and most prominently."
+        }
+    ],
+    "fourier_series": [
+        {
+            "id": "FS01",
+            "misconception": "Fourier series always converges to f(x) at every point",
+            "danger": "HIGH",
+            "question": "At a point of discontinuity x₀, what value does the Fourier series converge to?",
+            "correct": "At a discontinuity, the Fourier series converges to the AVERAGE of the left and right limits: [f(x₀⁺) + f(x₀⁻)]/2. This is the Dirichlet condition. Students who write 'the Fourier series equals f(x) everywhere' lose marks when the function has jump discontinuities.",
+            "why_students_believe_it": "The series is called the Fourier series 'of f(x)' suggesting it equals f(x) everywhere."
+        },
+        {
+            "id": "FS02",
+            "misconception": "Any function can be represented by a Fourier series",
+            "danger": "MEDIUM",
+            "question": "What conditions must f(x) satisfy for its Fourier series to exist and converge? Name them.",
+            "correct": "Dirichlet conditions: (1) f must be periodic, (2) f must be bounded, (3) f must have a finite number of maxima, minima, and discontinuities in one period. Students who skip stating these conditions in exams lose marks on theory questions.",
+            "why_students_believe_it": "Textbooks jump straight to computing Fourier series without emphasising validity conditions."
+        },
+        {
+            "id": "FS03",
+            "misconception": "For an odd function, a₀ = 0 because the average is zero",
+            "danger": "MEDIUM",
+            "question": "Why is a₀ = 0 for an odd function f(x) on [-L, L]?",
+            "correct": "a₀ = (1/L)∫₋ₗᴸ f(x)dx. For an odd function, f(-x) = -f(x), so the integral over a symmetric interval is zero — hence a₀ = 0. ALL cosine coefficients aₙ = 0 for odd functions, and ALL sine coefficients bₙ = 0 for even functions. Students must state the reason, not just the result.",
+            "why_students_believe_it": "Students memorise the result but cannot explain the reasoning when asked."
+        }
+    ],
+    "probability": [
+        {
+            "id": "PR01",
+            "misconception": "P(A∩B) = P(A)·P(B) always",
+            "danger": "CRITICAL",
+            "question": "A card is drawn from a deck. A = 'card is red', B = 'card is a king'. Are A and B independent? Calculate P(A∩B) both ways.",
+            "correct": "P(A)=1/2, P(B)=4/52=1/13. P(A∩B) = P(red king) = 2/52 = 1/26. P(A)·P(B) = 1/2 · 1/13 = 1/26. Here they are equal — but this is because A and B happen to be independent. P(A∩B) = P(A)·P(B) is the DEFINITION of independence, not a general rule. For dependent events, use P(A∩B) = P(A)·P(B|A).",
+            "why_students_believe_it": "Students see the multiplication rule in examples where events are independent and generalise incorrectly."
+        },
+        {
+            "id": "PR02",
+            "misconception": "The mean of a normal distribution is always 0",
+            "danger": "HIGH",
+            "question": "If X ~ N(μ, σ²), what are the mean and variance? When is the mean zero?",
+            "correct": "Mean = μ, Variance = σ². The mean is zero only for the STANDARD normal N(0,1). A general normal distribution can have any mean. When solving problems, always convert to standard normal using Z = (X-μ)/σ before using Z-tables.",
+            "why_students_believe_it": "Z-tables use the standard normal and students confuse the standard form with the general form."
+        },
+        {
+            "id": "PR03",
+            "misconception": "Variance can be negative if the data has more negative values",
+            "danger": "HIGH",
+            "question": "Can Var(X) ever be negative? What is Var(X) if X always takes the same value?",
+            "correct": "Variance is ALWAYS non-negative. Var(X) = E[(X-μ)²] ≥ 0 because it is an expectation of a squared quantity. If X is constant, Var(X) = 0. Negative variance is mathematically impossible — if you compute a negative value, you made an arithmetic error.",
+            "why_students_believe_it": "Students confuse variance with the deviations (X-μ) which can be negative."
+        }
+    ],
+    "numerical": [
+        {
+            "id": "NM01",
+            "misconception": "Newton-Raphson always converges to the correct root",
+            "danger": "HIGH",
+            "question": "Can Newton-Raphson method fail to converge? Give a condition when it might diverge.",
+            "correct": "Newton-Raphson can FAIL if: (1) f'(xₙ) = 0 at some iterate — division by zero, (2) the initial guess is too far from the root, (3) the function has multiple roots nearby. The method has quadratic convergence near the root but is not globally convergent. Always state the convergence condition in exam answers.",
+            "why_students_believe_it": "Textbook examples are chosen to always converge, never showing failure cases."
+        },
+        {
+            "id": "NM02",
+            "misconception": "Simpson's 1/3 rule can be applied for any number of subintervals",
+            "danger": "CRITICAL",
+            "question": "You want to apply Simpson's 1/3 rule with 5 subintervals. Can you? What is the requirement?",
+            "correct": "Simpson's 1/3 rule REQUIRES an EVEN number of subintervals (equivalently, an odd number of points including endpoints). With 5 subintervals you CANNOT directly apply it — use 4 or 6 subintervals. This is the single most common error in numerical integration. Always check: n must be even.",
+            "why_students_believe_it": "Students memorise the formula without remembering the constraint on n."
+        },
+        {
+            "id": "NM03",
+            "misconception": "More iterations always means more accuracy in Newton-Raphson",
+            "danger": "MEDIUM",
+            "question": "After 5 iterations of Newton-Raphson, xₙ = 1.4142135 and xₙ₊₁ = 1.4142136. Should you do more iterations?",
+            "correct": "Stop when |xₙ₊₁ - xₙ| < ε (your tolerance). At this point the answer has converged to the required accuracy — more iterations simply repeat the same digits. In exam problems, iterate until successive values agree to the required decimal places, then stop and state convergence.",
+            "why_students_believe_it": "Students think of 'more iterations = more accurate' without understanding convergence criteria."
+        }
+    ],
+    "transforms": [
+        {
+            "id": "TR01",
+            "misconception": "Z-transform and Laplace transform are just different names for the same thing",
+            "danger": "HIGH",
+            "question": "What is the fundamental difference between Z-transform and Laplace transform?",
+            "correct": "Laplace transform applies to continuous-time signals: F(s) = ∫₀^∞ f(t)e^(-st)dt. Z-transform applies to discrete-time sequences: X(z) = Σₙ x[n]z^(-n). They are connected by z = e^(sT) where T is sampling period. Using Laplace for discrete signals or Z-transform for continuous signals gives meaningless results.",
+            "why_students_believe_it": "Both transforms convert time-domain problems to algebraic problems — students see the similarity but miss the fundamental difference."
+        },
+        {
+            "id": "TR02",
+            "misconception": "Region of Convergence (ROC) is always the entire z-plane",
+            "danger": "HIGH",
+            "question": "What is the ROC of X(z) = z/(z-0.5) for a causal sequence?",
+            "correct": "ROC = {|z| > 0.5} — the region outside the circle of radius 0.5. ROC is never the entire z-plane for non-trivial sequences. For causal sequences ROC is exterior to a circle; for anti-causal it is interior. The ROC MUST be stated with every Z-transform answer — without it the answer is incomplete.",
+            "why_students_believe_it": "Students compute the transform formula correctly but treat ROC as an afterthought."
+        }
+    ]
+}
+
+# ══════════════════════════════════════════════════════════════
+#  MISCONCEPTION DETECTOR PROMPT
+# ══════════════════════════════════════════════════════════════
+def build_misconception_prompt(topic_key, subtopic, student_answer, question_id):
+    """Evaluate student's free-text answer against known misconceptions"""
+    # Find the specific question
+    topic_misconceptions = MISCONCEPTIONS.get(topic_key, [])
+    question_data = None
+    for m in topic_misconceptions:
+        if m["id"] == question_id:
+            question_data = m
+            break
+
+    if not question_data:
+        return None
+
+    return f"""You are MathSphere's Misconception Detector — a specialist in mathematics education.
+
+You have asked a diagnostic question to probe a specific misconception.
+
+MISCONCEPTION BEING PROBED: {question_data['misconception']}
+DANGER LEVEL: {question_data['danger']}
+
+DIAGNOSTIC QUESTION ASKED:
+{question_data['question']}
+
+STUDENT'S ANSWER:
+{student_answer}
+
+CORRECT UNDERSTANDING:
+{question_data['correct']}
+
+WHY STUDENTS HOLD THIS MISCONCEPTION:
+{question_data['why_students_believe_it']}
+
+YOUR TASK — analyse the student's answer carefully:
+
+DIAGNOSIS:
+[State clearly: does the student's answer reveal the misconception, a partial misconception, or correct understanding?
+Quote the specific phrase in their answer that reveals this.]
+
+WHAT THIS TELLS US:
+[Explain precisely what mental model the student has — what they believe is happening mathematically]
+
+THE CORRECT UNDERSTANDING:
+[Explain the correct understanding clearly and gently — not just the answer but WHY the correct understanding is true]
+
+THE COUNTEREXAMPLE THAT BREAKS THE MISCONCEPTION:
+[Give one specific numerical counterexample that makes the misconception obviously wrong]
+
+HOW THIS AFFECTS EXAM PERFORMANCE:
+[Describe exactly which types of exam questions this misconception will cause errors in, and what the errors look like]
+
+HOW TO FIX THIS PERMANENTLY:
+[One specific mental reframe or visual image that replaces the wrong belief with the correct one]
+
+CONFIDENCE IN DIAGNOSIS: HIGH / MEDIUM / LOW
+
+Tone: Warm, non-judgmental, encouraging. The student tried. Treat this as a learning moment, not a test result.
+Never say "wrong" — say "this is a very common belief, and here is what is actually happening."
+"""
+
+# ══════════════════════════════════════════════════════════════
+#  MISCONCEPTION ROUTES
+# ══════════════════════════════════════════════════════════════
+@eng_bp.route("/eng/misconceptions", methods=["POST"])
+def get_misconceptions():
+    """Return the list of diagnostic questions for a topic"""
+    try:
+        data  = request.json
+        topic = data.get("topic","")
+        topic_misconceptions = MISCONCEPTIONS.get(topic, [])
+        # Return only question data — not the correct answer (student hasn't answered yet)
+        questions = [{
+            "id":           m["id"],
+            "question":     m["question"],
+            "danger":       m["danger"],
+            "misconception": m["misconception"]
+        } for m in topic_misconceptions]
+        return jsonify({"questions": questions, "topic": topic})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/diagnose", methods=["POST"])
+def diagnose():
+    """Evaluate student answer and provide misconception diagnosis"""
+    try:
+        data           = request.json
+        topic          = data.get("topic","")
+        question_id    = data.get("question_id","")
+        student_answer = data.get("answer","")
+        if not student_answer.strip():
+            return jsonify({"error": "Please write your answer first"}), 400
+        prompt = build_misconception_prompt(topic, "", student_answer, question_id)
+        if not prompt:
+            return jsonify({"error": "Question not found"}), 404
+        response, source = get_eng_response(prompt)
+        return jsonify({"response": response, "source": source})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
