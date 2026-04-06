@@ -1,17 +1,57 @@
-from flask import Flask, render_template, request, jsonify
-from google import genai
-from groq import Groq
-from dotenv import load_dotenv
-from engineering_math import eng_bp
+import sys
+import traceback
+
+print("[STARTUP] Starting MathSphere...", flush=True)
+
+try:
+    from flask import Flask, render_template, request, jsonify
+    print("[STARTUP] Flask OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] Flask import failed: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from google import genai
+    print("[STARTUP] Google GenAI OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] Google GenAI import failed: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from groq import Groq
+    print("[STARTUP] Groq OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] Groq import failed: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from dotenv import load_dotenv
+    print("[STARTUP] dotenv OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] dotenv import failed: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from engineering_math import eng_bp
+    print("[STARTUP] engineering_math OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] engineering_math import failed: {e}", flush=True)
+    traceback.print_exc()
+    sys.exit(1)
+
 import os, base64, re, time
 from PIL import Image
 import io
+
 try:
     import sympy as sp
     SYMPY_AVAILABLE = True
+    print("[STARTUP] sympy OK", flush=True)
 except ImportError:
     SYMPY_AVAILABLE = False
+    print("[STARTUP] sympy not available — continuing without it", flush=True)
 
+print("[STARTUP] All imports successful!", flush=True)
 
 
 load_dotenv()
