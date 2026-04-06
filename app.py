@@ -1,47 +1,69 @@
 import sys
 import traceback
+import os
 
 print("[STARTUP] Starting MathSphere...", flush=True)
 
+# ── SAFE IMPORTS WITH LOGGING ──────────────────────────────────
 try:
     from flask import Flask, render_template, request, jsonify
     print("[STARTUP] Flask OK", flush=True)
 except Exception as e:
-    print(f"[CRASH] Flask import failed: {e}", flush=True)
+    print(f"[CRASH] Flask: {e}", flush=True)
     sys.exit(1)
 
 try:
+    print("[STARTUP] Loading Google GenAI...", flush=True)
     from google import genai
     print("[STARTUP] Google GenAI OK", flush=True)
 except Exception as e:
-    print(f"[CRASH] Google GenAI import failed: {e}", flush=True)
+    print(f"[CRASH] Google GenAI: {e}", flush=True)
+    traceback.print_exc()
     sys.exit(1)
 
 try:
+    print("[STARTUP] Loading Groq...", flush=True)
     from groq import Groq
     print("[STARTUP] Groq OK", flush=True)
 except Exception as e:
-    print(f"[CRASH] Groq import failed: {e}", flush=True)
+    print(f"[CRASH] Groq: {e}", flush=True)
     sys.exit(1)
 
 try:
     from dotenv import load_dotenv
     print("[STARTUP] dotenv OK", flush=True)
 except Exception as e:
-    print(f"[CRASH] dotenv import failed: {e}", flush=True)
+    print(f"[CRASH] dotenv: {e}", flush=True)
     sys.exit(1)
 
+# ── LOAD ENV BEFORE engineering_math (it needs API keys) ───────
+load_dotenv()
+print("[STARTUP] Environment loaded", flush=True)
+
+# Verify keys exist
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
+print(f"[STARTUP] GEMINI_API_KEY: {'SET (' + GEMINI_API_KEY[:8] + '...)' if GEMINI_API_KEY else 'MISSING!'}", flush=True)
+print(f"[STARTUP] GROQ_API_KEY: {'SET (' + GROQ_API_KEY[:8] + '...)' if GROQ_API_KEY else 'MISSING!'}", flush=True)
+
 try:
+    print("[STARTUP] Loading engineering_math...", flush=True)
     from engineering_math import eng_bp
     print("[STARTUP] engineering_math OK", flush=True)
 except Exception as e:
-    print(f"[CRASH] engineering_math import failed: {e}", flush=True)
+    print(f"[CRASH] engineering_math: {e}", flush=True)
     traceback.print_exc()
     sys.exit(1)
 
-import os, base64, re, time
-from PIL import Image
-import io
+import base64, re, time
+
+try:
+    from PIL import Image
+    import io
+    print("[STARTUP] Pillow OK", flush=True)
+except Exception as e:
+    print(f"[CRASH] Pillow: {e}", flush=True)
+    sys.exit(1)
 
 try:
     import sympy as sp
@@ -49,18 +71,14 @@ try:
     print("[STARTUP] sympy OK", flush=True)
 except ImportError:
     SYMPY_AVAILABLE = False
-    print("[STARTUP] sympy not available — continuing without it", flush=True)
+    print("[STARTUP] sympy skipped — continuing without it", flush=True)
 
-print("[STARTUP] All imports successful!", flush=True)
+print("[STARTUP] All imports done!", flush=True)
 
-
-load_dotenv()
+# ── APP CREATION ───────────────────────────────────────────────
 app = Flask(__name__)
 app.register_blueprint(eng_bp)
-
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
+print("[STARTUP] App created and blueprint registered", flush=True)
 
 # ── MODEL CASCADES ─────────────────────────────────────────────
 HARD_MODEL_CASCADE = [
