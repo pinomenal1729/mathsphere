@@ -1,18 +1,46 @@
+# ══════════════════════════════════════════════════════════════
+#  MATHSPHERE ENGINEERING v2.1
+#  By Anupam Nigam
+#  100% FREE — Zero Rupees
+#  
+#  Complete engineering mathematics tutoring backend
+#  For B.Tech students (IIT/NIT/Mumbai University/VTU/Anna University)
+# ══════════════════════════════════════════════════════════════
+
 from flask import Blueprint, jsonify, request
 from groq import Groq
 from google import genai
 from dotenv import load_dotenv
-import os, time, hashlib
+import os, time, hashlib, threading, re, logging
 
 load_dotenv()
 
+# ══════════════════════════════════════════════════════════════
+#  LOGGING SETUP
+# ══════════════════════════════════════════════════════════════
+logger = logging.getLogger("mathsphere.engineering")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    ))
+    logger.addHandler(handler)
+
+# ══════════════════════════════════════════════════════════════
+#  BLUEPRINT AND CONFIG
+# ══════════════════════════════════════════════════════════════
 eng_bp = Blueprint('engineering', __name__)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
-GROQ_MODEL     = "llama-3.3-70b-versatile"
-GROQ_MAX_TOKENS = 8000
-GEMINI_CASCADE = [("gemini-2.5-flash", "Gemini 2.5 Flash"), ("gemini-2.0-flash", "Gemini 2.0 Flash")]
+GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY    = os.getenv("GROQ_API_KEY")
+GROQ_MODEL      = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MAX_TOKENS = int(os.getenv("GROQ_MAX_TOKENS", "8000"))
+GEMINI_CASCADE  = [
+    ("gemini-2.5-flash", "Gemini 2.5 Flash"),
+    ("gemini-2.0-flash", "Gemini 2.0 Flash")
+]
 
 # ══════════════════════════════════════════════════════════════
 #  MODULE-LEVEL CLIENTS — instantiated once, reused forever
@@ -21,37 +49,130 @@ groq_client   = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # ══════════════════════════════════════════════════════════════
-#  SIMPLE RESPONSE CACHE — saves API calls, zero cost
+#  THREAD-SAFE CACHE — saves API calls, zero cost
 # ══════════════════════════════════════════════════════════════
 _response_cache = {}
-CACHE_MAX_SIZE  = 200  # prevent memory bloat
+_cache_lock     = threading.Lock()
+CACHE_MAX_SIZE  = 200
+CACHE_TTL       = 86400  # 24 hours
 
 def cache_key(prompt):
     return hashlib.sha256(prompt.encode()).hexdigest()
 
 def get_cached(prompt):
     key = cache_key(prompt)
-    if key in _response_cache:
-        entry = _response_cache[key]
-        entry["hits"] = entry.get("hits", 0) + 1
-        return entry["response"], entry["source"] + " (cached)"
+    with _cache_lock:
+        if key in _response_cache:
+            entry = _response_cache[key]
+            age = time.time() - entry.get("created_at", 0)
+            if age > CACHE_TTL:
+                del _response_cache[key]
+                logger.debug("Cache expired for key: %s", key[:12])
+                return None, None
+            entry["hits"] = entry.get("hits", 0) + 1
+            return entry["response"], entry["source"] + " (cached)"
     return None, None
 
 def set_cache(prompt, response, source):
-    if len(_response_cache) >= CACHE_MAX_SIZE:
-        # evict least-hit entry
-        min_key = min(_response_cache, key=lambda k: _response_cache[k].get("hits", 0))
-        del _response_cache[min_key]
-    _response_cache[cache_key(prompt)] = {
-        "response": response,
-        "source":   source,
-        "hits":     0
-    }
+    response_size = len(response.encode('utf-8'))
+    if response_size > 100_000:
+        logger.warning("Response too large to cache: %d bytes", response_size)
+        return
+    with _cache_lock:
+        if len(_response_cache) >= CACHE_MAX_SIZE:
+            min_key = min(_response_cache, key=lambda k: _response_cache[k].get("hits", 0))
+            del _response_cache[min_key]
+        _response_cache[cache_key(prompt)] = {
+            "response":   response,
+            "source":     source,
+            "hits":       0,
+            "created_at": time.time()
+        }
 
+# ══════════════════════════════════════════════════════════════
+#  THREAD-SAFE RATE LIMITER — protects free API quota
+# ══════════════════════════════════════════════════════════════
+_rate_data = {}
+_rate_lock = threading.Lock()
+
+def check_rate_limit(max_per_minute=6):
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    with _rate_lock:
+        if ip not in _rate_data:
+            _rate_data[ip] = []
+        _rate_data[ip] = [t for t in _rate_data[ip] if now - t < 60]
+        if len(_rate_data) > 2000:
+            oldest_ip = min(_rate_data, key=lambda k: max(_rate_data[k]) if _rate_data[k] else 0)
+            del _rate_data[oldest_ip]
+        if len(_rate_data[ip]) >= max_per_minute:
+            return False
+        _rate_data[ip].append(now)
+        return True
+
+def rate_limit_response():
+    return jsonify({
+        "error": "Please wait a moment before trying again. This helps keep the service free for everyone."
+    }), 429
+
+# ══════════════════════════════════════════════════════════════
+#  INPUT SANITIZATION — prevents prompt injection
+# ══════════════════════════════════════════════════════════════
+def sanitize_input(text, max_length=2000):
+    if not isinstance(text, str):
+        return ""
+    text = text.strip()
+    if not text:
+        return ""
+    text = text[:max_length]
+    bad_patterns = [
+        r"ignore\s+(all\s+)?previous",
+        r"disregard\s+(all\s+)?above",
+        r"you\s+are\s+now",
+        r"new\s+instructions",
+        r"system\s*prompt",
+        r"pretend\s+you\s+are",
+        r"override\s+instructions",
+        r"forget\s+(all\s+)?previous",
+        r"<\|.*?\|>",
+        r"$$INST$$.*?$$/INST$$",
+    ]
+    for pattern in bad_patterns:
+        text = re.sub(pattern, "[removed]", text, flags=re.IGNORECASE)
+    return text
+
+# ══════════════════════════════════════════════════════════════
+#  INPUT VALIDATION HELPER
+# ══════════════════════════════════════════════════════════════
+def validate_json(*required_fields):
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return None, jsonify({"error": "Request body must be valid JSON"}), 400
+    missing = [f for f in required_fields if not str(data.get(f, "")).strip()]
+    if missing:
+        return None, jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
+    return data, None, None
+
+# ══════════════════════════════════════════════════════════════
+#  RESPONSE VALIDATION — don't cache garbage
+# ══════════════════════════════════════════════════════════════
+def is_valid_response(response):
+    if not response or not isinstance(response, str):
+        return False
+    if len(response.strip()) < 100:
+        return False
+    bad_starts = [
+        "i cannot", "i'm unable", "i don't", "as an ai",
+        "error", "sorry, i", "i apologize"
+    ]
+    lower = response.strip().lower()
+    for bad in bad_starts:
+        if lower.startswith(bad):
+            return False
+    return True
 
 # ══════════════════════════════════════════════════════════════
 #  SYLLABUS DATA — IIT/NIT/Mumbai University/VTU pattern
-#  Fully expanded — every exam question type covered
 # ══════════════════════════════════════════════════════════════
 SYLLABUS = {
     "sem1": {
@@ -508,94 +629,94 @@ SYLLABUS = {
 }
 
 # ══════════════════════════════════════════════════════════════
-#  PREREQUISITES — hardcoded, zero AI calls
+#  PREREQUISITES
 # ══════════════════════════════════════════════════════════════
 PREREQUISITES = {
-    "Limits and Continuity":              ["Basic functions and graphs","Algebra of limits"],
+    "Limits and Continuity":              ["Basic functions and graphs", "Algebra of limits"],
     "Differentiability":                  ["Limits and Continuity"],
-    "Rolle's Theorem":                    ["Differentiability","Limits and Continuity"],
-    "Lagrange's Mean Value Theorem":      ["Rolle's Theorem","Differentiability"],
+    "Rolle's Theorem":                    ["Differentiability", "Limits and Continuity"],
+    "Lagrange's Mean Value Theorem":      ["Rolle's Theorem", "Differentiability"],
     "Cauchy's Mean Value Theorem":        ["Lagrange's Mean Value Theorem"],
-    "L'Hopital's Rule":                   ["Limits and Continuity","Differentiability","Indeterminate Forms"],
-    "Taylor's Theorem":                   ["Differentiability","Maclaurin Series"],
-    "Maclaurin Series":                   ["Differentiability","Limits and Continuity"],
-    "Indeterminate Forms":                ["Limits and Continuity","L'Hopital's Rule"],
-    "Curvature and Radius of Curvature":  ["Differentiability","Parametric equations"],
-    "Partial Derivatives":                ["Limits and Continuity","Differentiability"],
-    "Euler's Theorem on Homogeneous Functions": ["Partial Derivatives","Functions of Several Variables"],
-    "Total Derivative":                   ["Partial Derivatives","Chain rule"],
-    "Jacobians":                          ["Partial Derivatives","Determinants"],
-    "Maxima and Minima of Two Variables": ["Partial Derivatives","Jacobians"],
-    "Lagrange's Method of Multipliers":   ["Partial Derivatives","Maxima and Minima of Two Variables"],
-    "Reduction Formulae":                 ["Integration techniques","Trigonometric identities"],
-    "Beta and Gamma Functions":           ["Reduction Formulae","Improper Integrals"],
-    "Double Integrals":                   ["Single variable integration","Limits and Continuity"],
+    "L'Hopital's Rule":                   ["Limits and Continuity", "Differentiability", "Indeterminate Forms"],
+    "Taylor's Theorem":                   ["Differentiability", "Maclaurin Series"],
+    "Maclaurin Series":                   ["Differentiability", "Limits and Continuity"],
+    "Indeterminate Forms":                ["Limits and Continuity", "L'Hopital's Rule"],
+    "Curvature and Radius of Curvature":  ["Differentiability", "Parametric equations"],
+    "Partial Derivatives":                ["Limits and Continuity", "Differentiability"],
+    "Euler's Theorem on Homogeneous Functions": ["Partial Derivatives", "Functions of Several Variables"],
+    "Total Derivative":                   ["Partial Derivatives", "Chain rule"],
+    "Jacobians":                          ["Partial Derivatives", "Determinants"],
+    "Maxima and Minima of Two Variables":  ["Partial Derivatives", "Jacobians"],
+    "Lagrange's Method of Multipliers":   ["Partial Derivatives", "Maxima and Minima of Two Variables"],
+    "Reduction Formulae":                 ["Integration techniques", "Trigonometric identities"],
+    "Beta and Gamma Functions":           ["Reduction Formulae", "Improper Integrals"],
+    "Double Integrals":                   ["Single variable integration", "Limits and Continuity"],
     "Change of Order of Integration":     ["Double Integrals"],
     "Triple Integrals":                   ["Double Integrals"],
-    "Improper Integrals":                 ["Single variable integration","Limits and Continuity"],
-    "Convergence and Divergence":         ["Limits and Continuity","Sequences"],
+    "Improper Integrals":                 ["Single variable integration", "Limits and Continuity"],
+    "Convergence and Divergence":         ["Limits and Continuity", "Sequences"],
     "Ratio Test (D'Alembert)":            ["Convergence and Divergence"],
     "Root Test (Cauchy)":                 ["Convergence and Divergence"],
-    "Power Series and Radius of Convergence": ["Convergence and Divergence","Taylor's Theorem"],
+    "Power Series and Radius of Convergence": ["Convergence and Divergence", "Taylor's Theorem"],
     "Matrices and Types":                 ["Basic algebra"],
-    "Rank of a Matrix":                   ["Matrices and Types","Echelon Form and Normal Form"],
-    "System of Linear Equations":         ["Rank of a Matrix","Echelon Form and Normal Form"],
-    "Eigenvalues and Eigenvectors":        ["Matrices and Types","Determinants","System of Linear Equations"],
+    "Rank of a Matrix":                   ["Matrices and Types", "Echelon Form and Normal Form"],
+    "System of Linear Equations":         ["Rank of a Matrix", "Echelon Form and Normal Form"],
+    "Eigenvalues and Eigenvectors":       ["Matrices and Types", "Determinants", "System of Linear Equations"],
     "Cayley-Hamilton Theorem":            ["Eigenvalues and Eigenvectors"],
-    "Diagonalization":                    ["Eigenvalues and Eigenvectors","Cayley-Hamilton Theorem"],
-    "Quadratic Forms":                    ["Eigenvalues and Eigenvectors","Diagonalization"],
-    "Exact Differential Equations":       ["Variables Separable","Partial Derivatives"],
+    "Diagonalization":                    ["Eigenvalues and Eigenvectors", "Cayley-Hamilton Theorem"],
+    "Quadratic Forms":                    ["Eigenvalues and Eigenvectors", "Diagonalization"],
+    "Exact Differential Equations":       ["Variables Separable", "Partial Derivatives"],
     "Integrating Factors":                ["Exact Differential Equations"],
     "Bernoulli's Equation":               ["Linear First Order ODEs"],
-    "Complementary Function":             ["Linear ODEs with Constant Coefficients","Characteristic equation"],
+    "Complementary Function":             ["Linear ODEs with Constant Coefficients", "Characteristic equation"],
     "Particular Integral":                ["Complementary Function"],
-    "Variation of Parameters":            ["Complementary Function","Particular Integral"],
+    "Variation of Parameters":            ["Complementary Function", "Particular Integral"],
     "Euler-Cauchy Equation":              ["Linear ODEs with Constant Coefficients"],
-    "Laplace Transforms of Standard Functions": ["Definition and Existence","Basic integration"],
-    "Inverse Laplace Transform":          ["Laplace Transforms of Standard Functions","Partial Fractions Method"],
+    "Laplace Transforms of Standard Functions": ["Definition and Existence", "Basic integration"],
+    "Inverse Laplace Transform":          ["Laplace Transforms of Standard Functions", "Partial Fractions Method"],
     "Convolution Theorem":                ["Inverse Laplace Transform"],
-    "Solution of ODEs using Laplace":     ["Inverse Laplace Transform","Convolution Theorem"],
+    "Solution of ODEs using Laplace":     ["Inverse Laplace Transform", "Convolution Theorem"],
     "Unit Step and Dirac Delta Functions": ["Laplace Transforms of Standard Functions"],
-    "Gradient and Directional Derivative": ["Partial Derivatives","Scalar and Vector Fields"],
+    "Gradient and Directional Derivative": ["Partial Derivatives", "Scalar and Vector Fields"],
     "Divergence and Curl":                ["Gradient and Directional Derivative"],
-    "Line Integrals":                     ["Vector Calculus basics","Single variable integration"],
-    "Surface Integrals":                  ["Line Integrals","Double Integrals"],
-    "Green's Theorem in the Plane":       ["Line Integrals","Double Integrals"],
-    "Stokes' Theorem":                    ["Surface Integrals","Divergence and Curl"],
-    "Gauss Divergence Theorem":           ["Surface Integrals","Divergence and Curl"],
-    "Analytic Functions":                 ["Complex Numbers Review","Limits in complex plane"],
-    "Cauchy-Riemann Equations":           ["Analytic Functions","Partial Derivatives"],
-    "Cauchy's Integral Theorem":          ["Complex Integration","Analytic Functions"],
+    "Line Integrals":                     ["Vector Calculus basics", "Single variable integration"],
+    "Surface Integrals":                  ["Line Integrals", "Double Integrals"],
+    "Green's Theorem in the Plane":       ["Line Integrals", "Double Integrals"],
+    "Stokes' Theorem":                    ["Surface Integrals", "Divergence and Curl"],
+    "Gauss Divergence Theorem":           ["Surface Integrals", "Divergence and Curl"],
+    "Analytic Functions":                 ["Complex Numbers Review", "Limits in complex plane"],
+    "Cauchy-Riemann Equations":           ["Analytic Functions", "Partial Derivatives"],
+    "Cauchy's Integral Theorem":          ["Complex Integration", "Analytic Functions"],
     "Cauchy's Integral Formula":          ["Cauchy's Integral Theorem"],
-    "Taylor and Laurent Series":          ["Cauchy's Integral Formula","Power Series"],
-    "Residue Theorem":                    ["Taylor and Laurent Series","Singularities and Poles"],
+    "Taylor and Laurent Series":          ["Cauchy's Integral Formula", "Power Series"],
+    "Residue Theorem":                    ["Taylor and Laurent Series", "Singularities and Poles"],
     "Contour Integration":                ["Residue Theorem"],
-    "Fourier Series of Even and Odd Functions": ["Euler's Formulae","Periodic Functions"],
+    "Fourier Series of Even and Odd Functions": ["Euler's Formulae", "Periodic Functions"],
     "Half-Range Sine and Cosine Series":  ["Fourier Series of Even and Odd Functions"],
     "Parseval's Identity":                ["Fourier Series of Even and Odd Functions"],
-    "Binomial Distribution":              ["Random Variables","Probability Distributions"],
+    "Binomial Distribution":              ["Random Variables", "Probability Distributions"],
     "Poisson Distribution":               ["Binomial Distribution"],
-    "Normal Distribution":                ["Probability Distributions","Expectation and Variance"],
-    "Correlation and Regression":         ["Expectation and Variance","Joint Distributions"],
-    "Hypothesis Testing":                 ["Normal Distribution","Sampling Theory"],
-    "t-Test and F-Test":                  ["Hypothesis Testing","Normal Distribution"],
-    "Newton-Raphson Method":              ["Bisection Method","Differentiability"],
-    "Newton's Forward Interpolation":     ["Errors and Approximations","Finite differences"],
+    "Normal Distribution":                ["Probability Distributions", "Expectation and Variance"],
+    "Correlation and Regression":         ["Expectation and Variance", "Joint Distributions"],
+    "Hypothesis Testing":                 ["Normal Distribution", "Sampling Theory"],
+    "t-Test and F-Test":                  ["Hypothesis Testing", "Normal Distribution"],
+    "Newton-Raphson Method":              ["Bisection Method", "Differentiability"],
+    "Newton's Forward Interpolation":     ["Errors and Approximations", "Finite differences"],
     "Newton's Backward Interpolation":    ["Newton's Forward Interpolation"],
     "Lagrange Interpolation":             ["Newton's Forward Interpolation"],
-    "Simpson's 1/3 Rule":                 ["Trapezoidal Rule","Numerical Differentiation"],
+    "Simpson's 1/3 Rule":                 ["Trapezoidal Rule", "Numerical Differentiation"],
     "Simpson's 3/8 Rule":                 ["Simpson's 1/3 Rule"],
-    "Runge-Kutta Method (RK4)":           ["Euler's Method for ODEs","Taylor's Theorem"],
-    "Fourier Transform":                  ["Fourier Integral Theorem","Fourier Series"],
+    "Runge-Kutta Method (RK4)":           ["Euler's Method for ODEs", "Taylor's Theorem"],
+    "Fourier Transform":                  ["Fourier Integral Theorem", "Fourier Series"],
     "Fourier Sine and Cosine Transforms": ["Fourier Transform"],
     "Convolution Theorem for Fourier":    ["Fourier Transform"],
-    "Z-Transform Properties":            ["Z-Transform Definition"],
-    "Inverse Z-Transform":               ["Z-Transform Properties","Partial Fractions Method"],
-    "Solution of Difference Equations":  ["Inverse Z-Transform"],
+    "Z-Transform Properties":             ["Z-Transform Definition"],
+    "Inverse Z-Transform":                ["Z-Transform Properties", "Partial Fractions Method"],
+    "Solution of Difference Equations":   ["Inverse Z-Transform"],
 }
 
 # ══════════════════════════════════════════════════════════════
-#  SUBTOPIC GUIDANCE — tells AI exactly what to cover per subtopic
+#  SUBTOPIC GUIDANCE
 # ══════════════════════════════════════════════════════════════
 SUBTOPIC_GUIDANCE = {
     "Limits and Continuity": "Cover epsilon-delta definition, left and right hand limits, algebra of limits, sandwich theorem. Show discontinuity types. Numerical example: find limit of (x^2-1)/(x-1) as x→1. Examiner expects: state type of discontinuity explicitly.",
@@ -661,20 +782,20 @@ SUBTOPIC_GUIDANCE = {
 #  REFERENCES
 # ══════════════════════════════════════════════════════════════
 REFERENCES = {
-    "diff_calc":        ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/","https://www.khanacademy.org/math/calculus-1","https://tutorial.math.lamar.edu/Classes/CalcI/CalcI.aspx","https://mathworld.wolfram.com/Calculus.html"],
-    "partial_diff":     ["https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/","https://www.khanacademy.org/math/multivariable-calculus","https://tutorial.math.lamar.edu/Classes/CalcIII/CalcIII.aspx","https://mathworld.wolfram.com/PartialDerivative.html"],
-    "integral_calc":    ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/","https://www.khanacademy.org/math/integral-calculus","https://tutorial.math.lamar.edu/Classes/CalcII/CalcII.aspx","https://mathworld.wolfram.com/Integral.html"],
-    "infinite_series":  ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/","https://www.khanacademy.org/math/ap-calculus-bc/bc-series-new","https://tutorial.math.lamar.edu/Classes/CalcII/SeriesIntro.aspx","https://mathworld.wolfram.com/Series.html"],
-    "linear_algebra":   ["https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/","https://www.khanacademy.org/math/linear-algebra","https://www.3blue1brown.com/topics/linear-algebra","https://mathworld.wolfram.com/LinearAlgebra.html"],
-    "ode_first":        ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/","https://www.khanacademy.org/math/differential-equations","https://tutorial.math.lamar.edu/Classes/DE/DE.aspx","https://mathworld.wolfram.com/OrdinaryDifferentialEquation.html"],
-    "ode_higher":       ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/","https://tutorial.math.lamar.edu/Classes/DE/SecondOrderConcepts.aspx","https://www.khanacademy.org/math/differential-equations","https://mathworld.wolfram.com/SecondOrderOrdinaryDifferentialEquation.html"],
-    "laplace":          ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/","https://tutorial.math.lamar.edu/Classes/DE/LaplaceIntro.aspx","https://www.khanacademy.org/math/differential-equations/laplace-transform","https://mathworld.wolfram.com/LaplaceTransform.html"],
-    "vector_calc":      ["https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/","https://www.khanacademy.org/math/multivariable-calculus","https://tutorial.math.lamar.edu/Classes/CalcIII/VectorFields.aspx","https://mathworld.wolfram.com/VectorCalculus.html"],
-    "complex_analysis": ["https://ocw.mit.edu/courses/18-04-complex-variables-with-applications-spring-2018/","https://mathworld.wolfram.com/ComplexAnalysis.html","https://www.youtube.com/playlist?list=PLBh2i93oe2qvRGAtgkTszX7szZDVd6jh1","https://nptel.ac.in/courses/111/106/111106084/"],
-    "fourier_series":   ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/","https://www.khanacademy.org/science/electrical-engineering/ee-signals","https://mathworld.wolfram.com/FourierSeries.html","https://nptel.ac.in/courses/111/104/111104092/"],
-    "probability":      ["https://ocw.mit.edu/courses/6-041sc-probabilistic-systems-analysis-and-applied-probability-fall-2013/","https://www.khanacademy.org/math/statistics-probability","https://www.probabilitycourse.com/","https://mathworld.wolfram.com/Probability.html"],
-    "numerical":        ["https://ocw.mit.edu/courses/18-330-introduction-to-numerical-analysis-spring-2012/","https://nptel.ac.in/courses/111/107/111107105/","https://mathworld.wolfram.com/NumericalAnalysis.html","https://tutorial.math.lamar.edu/Extras/AlgebraTrigReview/AlgebraTrigReview.aspx"],
-    "transforms":       ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/","https://www.khanacademy.org/science/electrical-engineering/ee-signals","https://mathworld.wolfram.com/FourierTransform.html","https://nptel.ac.in/courses/111/104/111104090/"]
+    "diff_calc":        ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/", "https://www.khanacademy.org/math/calculus-1", "https://tutorial.math.lamar.edu/Classes/CalcI/CalcI.aspx", "https://mathworld.wolfram.com/Calculus.html"],
+    "partial_diff":     ["https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/", "https://www.khanacademy.org/math/multivariable-calculus", "https://tutorial.math.lamar.edu/Classes/CalcIII/CalcIII.aspx", "https://mathworld.wolfram.com/PartialDerivative.html"],
+    "integral_calc":    ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/", "https://www.khanacademy.org/math/integral-calculus", "https://tutorial.math.lamar.edu/Classes/CalcII/CalcII.aspx", "https://mathworld.wolfram.com/Integral.html"],
+    "infinite_series":  ["https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/", "https://www.khanacademy.org/math/ap-calculus-bc/bc-series-new", "https://tutorial.math.lamar.edu/Classes/CalcII/SeriesIntro.aspx", "https://mathworld.wolfram.com/Series.html"],
+    "linear_algebra":   ["https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/", "https://www.khanacademy.org/math/linear-algebra", "https://www.3blue1brown.com/topics/linear-algebra", "https://mathworld.wolfram.com/LinearAlgebra.html"],
+    "ode_first":        ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/", "https://www.khanacademy.org/math/differential-equations", "https://tutorial.math.lamar.edu/Classes/DE/DE.aspx", "https://mathworld.wolfram.com/OrdinaryDifferentialEquation.html"],
+    "ode_higher":       ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/", "https://tutorial.math.lamar.edu/Classes/DE/SecondOrderConcepts.aspx", "https://www.khanacademy.org/math/differential-equations", "https://mathworld.wolfram.com/SecondOrderOrdinaryDifferentialEquation.html"],
+    "laplace":          ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/", "https://tutorial.math.lamar.edu/Classes/DE/LaplaceIntro.aspx", "https://www.khanacademy.org/math/differential-equations/laplace-transform", "https://mathworld.wolfram.com/LaplaceTransform.html"],
+    "vector_calc":      ["https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/", "https://www.khanacademy.org/math/multivariable-calculus", "https://tutorial.math.lamar.edu/Classes/CalcIII/VectorFields.aspx", "https://mathworld.wolfram.com/VectorCalculus.html"],
+    "complex_analysis": ["https://ocw.mit.edu/courses/18-04-complex-variables-with-applications-spring-2018/", "https://mathworld.wolfram.com/ComplexAnalysis.html", "https://www.youtube.com/playlist?list=PLBh2i93oe2qvRGAtgkTszX7szZDVd6jh1", "https://nptel.ac.in/courses/111/106/111106084/"],
+    "fourier_series":   ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/", "https://www.khanacademy.org/science/electrical-engineering/ee-signals", "https://mathworld.wolfram.com/FourierSeries.html", "https://nptel.ac.in/courses/111/104/111104092/"],
+    "probability":      ["https://ocw.mit.edu/courses/6-041sc-probabilistic-systems-analysis-and-applied-probability-fall-2013/", "https://www.khanacademy.org/math/statistics-probability", "https://www.probabilitycourse.com/", "https://mathworld.wolfram.com/Probability.html"],
+    "numerical":        ["https://ocw.mit.edu/courses/18-330-introduction-to-numerical-analysis-spring-2012/", "https://nptel.ac.in/courses/111/107/111107105/", "https://mathworld.wolfram.com/NumericalAnalysis.html", "https://tutorial.math.lamar.edu/Extras/AlgebraTrigReview/AlgebraTrigReview.aspx"],
+    "transforms":       ["https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/", "https://www.khanacademy.org/science/electrical-engineering/ee-signals", "https://mathworld.wolfram.com/FourierTransform.html", "https://nptel.ac.in/courses/111/104/111104090/"]
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -716,7 +837,7 @@ SUBJECT_CONNECTIONS = {
         {"subject": "Image Processing", "semester": "Sem 5-6", "how": "Transformations, filtering, compression using matrix operations.", "example": "SVD compression: $A = U\\Sigma V^T$"}
     ]},
     "ode_first": {"connections": [
-        {"subject": "Electrical Circuits", "semester": "Sem 2", "how": "RC and RL circuits give first-order ODEs.", "example": "RC circuit: $R\\,dq/dt + q/C = V(t)$"},
+                {"subject": "Electrical Circuits", "semester": "Sem 2", "how": "RC and RL circuits give first-order ODEs.", "example": "RC circuit: $R\\,dq/dt + q/C = V(t)$"},
         {"subject": "Engineering Mechanics", "semester": "Sem 1-2", "how": "Newton second law with variable force.", "example": "Projectile with drag: $m\\,dv/dt = mg - kv$"},
         {"subject": "Chemical Engineering", "semester": "Sem 3-4", "how": "Reaction kinetics, mixing problems.", "example": "First-order reaction: $dC/dt = -kC$"},
         {"subject": "Biomedical Engineering", "semester": "Sem 4+", "how": "Drug concentration, population models.", "example": "Drug decay: $dC/dt = -\\lambda C$"}
@@ -779,9 +900,11 @@ SUBJECT_CONNECTIONS = {
 ENG_FORMAT = """
 OUTPUT FORMAT RULES — STRICTLY FOLLOW:
 - Write inline math as $...$ and standalone equations on their own line as 
+
 $$
 ...
 $$
+
 
 - NEVER put $...$ math on the same line as an ALL-CAPS section header
 - Math always goes on a NEW LINE below the section header
@@ -848,9 +971,11 @@ CONDITIONS:
 
 PROOF:
 [Complete step-by-step proof. Every equation on its own line as 
+
 $$
 ...
 $$
+
 ]
 
 GEOMETRIC MEANING:
@@ -868,16 +993,20 @@ For EACH example use this EXACT structure:
 
 EXAMPLE [N] — [2 marks / 4 marks / 6 marks]:
 [Problem statement with specific numbers. Every equation as 
+
 $$
 ...
 $$
+
 ]
 
 SOLUTION:
 [Step-by-step. Every equation on its own line as 
+
 $$
 ...
 $$
+
 . No steps skipped.]
 [Label each step clearly]
 
@@ -886,9 +1015,11 @@ MARKS BREAKDOWN:
 
 FINAL ANSWER:
 
+
 $$
 [answer]
 $$
+
 
 
 COMMON MISTAKE:
@@ -907,9 +1038,11 @@ For each problem:
 
 PROBLEM [N] ([marks] Marks) — [Mumbai University / VTU / Anna University style]:
 [Problem statement. All equations as 
+
 $$
 ...
 $$
+
 ]
 
 HINT:
@@ -920,9 +1053,11 @@ MARKS BREAKDOWN:
 
 ANSWER:
 
+
 $$
 [final answer — no working]
 $$
+
 
 """,
         "intuition": f"""You are explaining {subtopic} to a B.Tech engineering student who is confused
@@ -954,9 +1089,11 @@ NOW THE MATHEMATICS:
 Each symbol should map to something physical they just visualised.]
 
 
+
 $$
 [the key formula]
 $$
+
 
 
 WHY EACH PART OF THE FORMULA MAKES SENSE:
@@ -1002,17 +1139,21 @@ Bullet points only — no lengthy explanations.
 
 KEY FORMULAS:
 [Every important formula on its own line as 
+
 $$
 ...
 $$
+
 ]
 [Label each formula with its name]
 
 STANDARD RESULTS TO MEMORISE:
 [5-8 results that appear most in university papers. Each as 
+
 $$
 ...
 $$
+
 ]
 
 CONDITIONS TO STATE:
@@ -1073,9 +1214,11 @@ STATUS: CONFIRMED / REPRESENTATIVE
 
 QUESTION TEXT:
 [Full question. Every equation on its own line as 
+
 $$
 ...
 $$
+
 ]
 
 APPROACH:
@@ -1083,9 +1226,11 @@ APPROACH:
 
 COMPLETE SOLUTION:
 [Step-by-step solution. Every equation on its own line as 
+
 $$
 ...
 $$
+
 . No steps skipped.]
 
 MARKS BREAKDOWN — STEP BY STEP:
@@ -1096,9 +1241,11 @@ MARKS BREAKDOWN — STEP BY STEP:
 
 FINAL ANSWER:
 
+
 $$
 [answer]
 $$
+
 
 
 VERIFICATION:
@@ -1154,9 +1301,11 @@ For EACH question:
 
 QUESTION [N]: ({marks_each} Marks)
 [Question with all equations as 
+
 $$
 ...
 $$
+
 ]
 
 Difficulty distribution: 40% straightforward, 40% multi-step, 20% proof or derivation.
@@ -1168,9 +1317,11 @@ COMPLETE SOLUTIONS
 
 SOLUTION [N]:
 [Complete step-by-step working. Every equation as 
+
 $$
 ...
 $$
+
 ]
 
 MARKS BREAKDOWN:
@@ -1180,9 +1331,11 @@ MARKS BREAKDOWN:
 
 FINAL ANSWER:
 
+
 $$
 [answer]
 $$
+
 
 
 End with:
@@ -1215,9 +1368,11 @@ FORMULA [N]: [Official Formula Name]
 
 FORMULA:
 
+
 $$
 [the complete formula — every symbol defined]
 $$
+
 
 
 PHYSICAL MEANING:
@@ -1236,9 +1391,11 @@ After all formulas add:
 
 STANDARD RESULTS TABLE:
 [All key results together — each as 
+
 $$
 ...
 $$
+
 ]
 
 DERIVATION CONNECTIONS:
@@ -1262,9 +1419,11 @@ A B.Tech engineering student asks: {question}
 
 Answer at college examination level — semester exam standard.
 Show all working. Every equation on its own line as 
+
 $$
 ...
 $$
+
 
 Include at least one worked numerical example with specific numbers.
 If relevant, mention which engineering subject uses this concept and how.
@@ -1272,10 +1431,6 @@ End with CONFIDENCE: HIGH / MEDIUM / LOW
 """
 
 
-# ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: STEP-BY-STEP SOLVER
-#  Students paste a problem, get detailed solution
-# ══════════════════════════════════════════════════════════════
 def build_solve_prompt(problem, topic_key=""):
     guidance = ""
     if topic_key:
@@ -1301,9 +1456,11 @@ STEP-BY-STEP SOLUTION:
 
 STEP 1: [Clear description of what we are doing]
 [Working with every equation on its own line as 
+
 $$
 ...
 $$
+
 ]
 [Explain WHY we do this step — not just HOW]
 
@@ -1314,9 +1471,11 @@ STEP 2: [Clear description]
 
 FINAL ANSWER:
 
+
 $$
 [boxed answer]
 $$
+
 
 
 VERIFICATION:
@@ -1339,34 +1498,34 @@ TIME ESTIMATE:
 """
 
 
-# ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: COMPARE METHODS
-#  When multiple methods exist, show all with comparison
-# ══════════════════════════════════════════════════════════════
-def build_compare_prompt(subtopic1, subtopic2, topic_key=""):
+def build_compare_prompt(method1, method2, topic_key=""):
     return ENG_CONTEXT + "\n" + ENG_FORMAT + f"""
 Compare and contrast these two mathematical methods/concepts for engineering students:
 
-METHOD A: {subtopic1}
-METHOD B: {subtopic2}
+METHOD A: {method1}
+METHOD B: {method2}
 
 Use this EXACT structure:
 
-METHOD A — {subtopic1.upper()}:
+METHOD A — {method1.upper()}:
 [2-3 sentence description]
 [Key formula as 
+
 $$
 ...
 $$
+
 ]
 [When to use: specific conditions]
 
-METHOD B — {subtopic2.upper()}:
+METHOD B — {method2.upper()}:
 [2-3 sentence description]
 [Key formula as 
+
 $$
 ...
 $$
+
 ]
 [When to use: specific conditions]
 
@@ -1385,9 +1544,11 @@ SAME PROBLEM, BOTH METHODS:
 
 Problem:
 
+
 $$
 [problem statement]
 $$
+
 
 
 Solution by Method A:
@@ -1407,10 +1568,6 @@ ENGINEERING CONTEXT:
 """
 
 
-# ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: EXAM STRATEGY GENERATOR
-#  Topic-wise exam preparation plan
-# ══════════════════════════════════════════════════════════════
 def build_exam_strategy_prompt(topic_key, hours_available):
     topic_label = ""
     for sem_data in SYLLABUS.values():
@@ -1461,9 +1618,11 @@ DANGER ZONES (where students commonly lose marks):
 
 FORMULA SHEET TO MEMORISE:
 [The 10-15 most critical formulas for this topic — each as 
+
 $$
 ...
 $$
+
 ]
 
 LAST-MINUTE CHECKLIST:
@@ -1480,10 +1639,6 @@ EXAM HALL STRATEGY:
 """
 
 
-# ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: DOUBT SOLVER WITH CONTEXT
-#  Student describes confusion, AI diagnoses and explains
-# ══════════════════════════════════════════════════════════════
 def build_doubt_prompt(doubt, topic_key="", subtopic=""):
     context = ""
     if topic_key:
@@ -1512,9 +1667,11 @@ THE SOURCE OF CONFUSION:
 THE CLEAR EXPLANATION:
 [Explain the correct understanding step by step. Use simple language first, then formal mathematics.]
 [Every equation on its own line as 
+
 $$
 ...
 $$
+
 ]
 
 THE KEY DISTINCTION:
@@ -1533,16 +1690,20 @@ HOW TO REMEMBER THIS:
 RELATED EXAM QUESTION:
 [One exam-style question that tests exactly this understanding]
 
+
 $$
 [question]
 $$
 
 
+
 ANSWER:
+
 
 $$
 [answer with key steps]
 $$
+
 
 
 CONFIDENCE THAT I ADDRESSED YOUR DOUBT: HIGH / MEDIUM / LOW
@@ -1551,339 +1712,7 @@ CONFIDENCE THAT I ADDRESSED YOUR DOUBT: HIGH / MEDIUM / LOW
 
 
 # ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: TOPIC ROADMAP
-#  Visual learning path for a complete topic
-# ══════════════════════════════════════════════════════════════
-def build_roadmap(topic_key):
-    """Generate a structured learning roadmap — no AI call needed"""
-    for sem_key, sem_data in SYLLABUS.items():
-        if topic_key in sem_data["topics"]:
-            topic_data = sem_data["topics"][topic_key]
-            subtopics = topic_data["subtopics"]
-            total = len(subtopics)
-
-            # Build phases
-            phases = []
-            chunk_size = max(1, total // 4)
-
-            phase_names = ["Foundation", "Core Concepts", "Advanced Methods", "Exam Mastery"]
-            phase_descriptions = [
-                "Build the basics — definitions, notation, simple examples",
-                "Master the main theorems and standard problems",
-                "Tackle harder problems, proofs, and special cases",
-                "Practice exam-style problems and revision"
-            ]
-
-            for i, (name, desc) in enumerate(zip(phase_names, phase_descriptions)):
-                start = i * chunk_size
-                end = start + chunk_size if i < 3 else total
-                phase_subtopics = subtopics[start:end] if start < total else []
-                phases.append({
-                    "phase":       i + 1,
-                    "name":        name,
-                    "description": desc,
-                    "subtopics":   phase_subtopics,
-                    "estimated_hours": max(1, len(phase_subtopics) * 2)
-                })
-
-            # Collect prerequisites for this topic
-            topic_prereqs = {}
-            for st in subtopics:
-                for key, val in PREREQUISITES.items():
-                    if key.lower() in st.lower() or st.lower() in key.lower():
-                        topic_prereqs[key] = val
-
-            return {
-                "topic":          topic_data["label"],
-                "total_subtopics": total,
-                "estimated_hours": total * 2,
-                "phases":         phases,
-                "prerequisites":  topic_prereqs,
-                "references":     REFERENCES.get(topic_key, [])
-            }
-
-    return None
-
-
-# ══════════════════════════════════════════════════════════════
-#  NEW FEATURE: STUDY PROGRESS TRACKER
-#  Tracks what students have studied (in-memory, per session)
-# ══════════════════════════════════════════════════════════════
-_student_progress = {}
-
-def get_progress(student_id):
-    if student_id not in _student_progress:
-        _student_progress[student_id] = {
-            "completed_subtopics":  [],
-            "weak_areas":           [],
-            "strong_areas":         [],
-            "misconceptions_found": [],
-            "mock_tests_taken":     0,
-            "total_study_time":     0,
-            "last_active":          None
-        }
-    return _student_progress[student_id]
-
-def update_progress(student_id, action, data):
-    progress = get_progress(student_id)
-    progress["last_active"] = time.strftime("%Y-%m-%d %H:%M:%S")
-
-    if action == "complete_subtopic":
-        subtopic = data.get("subtopic", "")
-        if subtopic and subtopic not in progress["completed_subtopics"]:
-            progress["completed_subtopics"].append(subtopic)
-
-    elif action == "mark_weak":
-        subtopic = data.get("subtopic", "")
-        if subtopic and subtopic not in progress["weak_areas"]:
-            progress["weak_areas"].append(subtopic)
-        if subtopic in progress["strong_areas"]:
-            progress["strong_areas"].remove(subtopic)
-
-    elif action == "mark_strong":
-        subtopic = data.get("subtopic", "")
-        if subtopic and subtopic not in progress["strong_areas"]:
-            progress["strong_areas"].append(subtopic)
-        if subtopic in progress["weak_areas"]:
-            progress["weak_areas"].remove(subtopic)
-
-    elif action == "misconception_found":
-        misconception_id = data.get("misconception_id", "")
-        if misconception_id and misconception_id not in progress["misconceptions_found"]:
-            progress["misconceptions_found"].append(misconception_id)
-
-    elif action == "mock_test":
-        progress["mock_tests_taken"] += 1
-
-    elif action == "study_time":
-        minutes = data.get("minutes", 0)
-        progress["total_study_time"] += minutes
-
-    return progress
-
-
-# ══════════════════════════════════════════════════════════════
-#  API HELPERS — with caching and proper error handling
-# ══════════════════════════════════════════════════════════════
-def call_groq(prompt, system=""):
-    if not groq_client:
-        raise RuntimeError("Groq API key not configured")
-    truncated_system = system[:4000] if len(system) > 4000 else system
-    resp = groq_client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[
-            {"role": "system", "content": truncated_system},
-            {"role": "user",   "content": prompt}
-        ],
-        max_tokens=GROQ_MAX_TOKENS,
-        temperature=0.1
-    )
-    return resp.choices[0].message.content
-
-def call_gemini(prompt, model_name):
-    if not gemini_client:
-        raise RuntimeError("Gemini API key not configured")
-    resp = gemini_client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config={"temperature": 0.1}
-    )
-    return resp.text
-
-def get_eng_response(full_prompt):
-    # Check cache first
-    cached_resp, cached_source = get_cached(full_prompt)
-    if cached_resp:
-        return cached_resp, cached_source
-
-    system_msg = ENG_CONTEXT + "\n" + ENG_FORMAT
-
-    # Try Groq first
-    try:
-        response = call_groq(full_prompt, system=system_msg)
-        set_cache(full_prompt, response, "Groq")
-        return response, "Groq"
-    except Exception as e:
-        print(f"[Eng] Groq failed: {e}")
-
-    # Cascade through Gemini models
-    for model_name, label in GEMINI_CASCADE:
-        try:
-            response = call_gemini(full_prompt, model_name)
-            set_cache(full_prompt, response, label)
-            return response, label
-        except Exception as e:
-            print(f"[Eng] {model_name} failed: {e}")
-            time.sleep(0.2)
-
-    return "Service temporarily unavailable. Please try again.", "None"
-
-
-# ══════════════════════════════════════════════════════════════
-#  INPUT VALIDATION HELPER
-# ══════════════════════════════════════════════════════════════
-def validate_json(*required_fields):
-    """Validate request has JSON body and required fields"""
-    data = request.get_json(force=True, silent=True)
-    if not data:
-        return None, jsonify({"error": "Request body must be valid JSON"}), 400
-    missing = [f for f in required_fields if not data.get(f, "").strip()]
-    if missing:
-        return None, jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
-    return data, None, None
-
-
-# ══════════════════════════════════════════════════════════════
-#  ROUTES — Original (with validation added)
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/syllabus")
-def get_syllabus():
-    return jsonify(SYLLABUS)
-
-@eng_bp.route("/eng/learn", methods=["POST"])
-def learn():
-    try:
-        data, err, code = validate_json("subtopic")
-        if err:
-            return err, code
-        topic    = data.get("topic", "")
-        subtopic = data.get("subtopic", "")
-        section  = data.get("section", "definition")
-        prereqs  = PREREQUISITES.get(subtopic, [])
-        prompt   = build_learn_prompt(topic, subtopic, section)
-        response, source = get_eng_response(prompt)
-        return jsonify({
-            "response":      response,
-            "source":        source,
-            "references":    REFERENCES.get(topic, []),
-            "prerequisites": prereqs
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/revision", methods=["POST"])
-def revision():
-    try:
-        data, err, code = validate_json("subtopic")
-        if err:
-            return err, code
-        topic    = data.get("topic", "")
-        subtopic = data.get("subtopic", "")
-        prompt   = build_revision_prompt(topic, subtopic)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source, "references": REFERENCES.get(topic, [])})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/pyq", methods=["POST"])
-def pyq():
-    try:
-        data, err, code = validate_json("subtopic")
-        if err:
-            return err, code
-        topic      = data.get("topic", "")
-        subtopic   = data.get("subtopic", "")
-        university = data.get("university", "all")
-        difficulty = data.get("difficulty", "medium")
-        prompt     = build_pyq_prompt(topic, subtopic, university, difficulty)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source, "references": REFERENCES.get(topic, [])})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/mocktest", methods=["POST"])
-def mocktest():
-    try:
-        data, err, code = validate_json("subtopic")
-        if err:
-            return err, code
-        topic      = data.get("topic", "")
-        subtopic   = data.get("subtopic", "")
-        num_q      = data.get("num_questions", "5")
-        marks_each = data.get("marks_each", "5")
-        prompt     = build_mocktest_prompt(topic, subtopic, num_q, marks_each)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/formulabooklet", methods=["POST"])
-def formula_booklet():
-    try:
-        data, err, code = validate_json("subtopic")
-        if err:
-            return err, code
-        topic    = data.get("topic", "")
-        subtopic = data.get("subtopic", "")
-        prompt   = build_formula_booklet_prompt(topic, subtopic)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source, "references": REFERENCES.get(topic, [])})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/connections", methods=["POST"])
-def connections():
-    try:
-        data, err, code = validate_json("topic")
-        if err:
-            return err, code
-        topic    = data.get("topic", "")
-        subtopic = data.get("subtopic", "")
-        topic_connections = SUBJECT_CONNECTIONS.get(topic)
-        if topic_connections:
-            return jsonify({
-                "connections": topic_connections["connections"],
-                "source":     "MathSphere Engineering",
-                "references": REFERENCES.get(topic, []),
-                "type":       "structured"
-            })
-        prompt = ENG_CONTEXT + f"""
-For the engineering mathematics topic: {subtopic}
-Show exactly how this appears in different engineering subjects.
-
-For EACH engineering subject:
-
-SUBJECT NAME: [name]
-SEMESTER: [which semester]
-HOW IT IS USED:
-[2-3 sentences with specific mathematical connection]
-KEY FORMULA:
-
-$$
-[actual formula from this topic used in this subject]
-$$
-
-EXAMPLE:
-[One specific engineering problem using this]
-
-Cover at least 5 different engineering subjects. Be specific.
-"""
-        response, source = get_eng_response(prompt)
-        return jsonify({
-            "response":   response,
-            "source":     source,
-            "references": REFERENCES.get(topic, []),
-            "type":       "generated"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/ask", methods=["POST"])
-def ask_eng():
-    try:
-        data, err, code = validate_json("question")
-        if err:
-            return err, code
-        question = data.get("question", "")
-        prompt   = build_ask_prompt(question)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ══════════════════════════════════════════════════════════════
-#  MISCONCEPTION DATABASE — COMPLETE
+#  MISCONCEPTION DATABASE
 # ══════════════════════════════════════════════════════════════
 MISCONCEPTIONS = {
     "diff_calc": [
@@ -1900,7 +1729,7 @@ MISCONCEPTIONS = {
             "misconception": "L'Hopital's Rule can be applied to any limit",
             "danger": "HIGH",
             "question": "Can you apply L'Hopital's Rule to find lim(x→2) (x²-4)/(x-2)? What must you check first?",
-            "correct": "L'Hopital's Rule applies ONLY when the limit gives an indeterminate form 0/0 or ∞/∞. The limit (x²-4)/(x-2) at x=2 gives 0/0 — so L'Hopital applies. But you must ALWAYS verify the indeterminate form first. Applying it to non-indeterminate forms gives wrong answers.",
+            "correct": "L'Hopital's Rule applies ONLY when the limit gives an indeterminate form 0/0 or ∞/∞. The limit (x²-4)/(x-2) at x=2 gives 0/0 — so L'Hopital applies. But you must ALWAYS verify the indeterminate form first.",
             "why_students_believe_it": "Students see L'Hopital as a shortcut and apply it without checking conditions."
         },
         {
@@ -1916,15 +1745,15 @@ MISCONCEPTIONS = {
             "misconception": "Taylor series always converges to the function",
             "danger": "HIGH",
             "question": "If I write the Taylor series of f(x) around x=0 and sum infinitely many terms, do I always get f(x)?",
-            "correct": "No. A function must be analytic for its Taylor series to converge to it. The Taylor series may converge to a different function or diverge entirely outside the radius of convergence. Always state the interval of convergence.",
-            "why_students_believe_it": "Students work only with standard functions (sin, cos, e^x) whose Taylor series converge everywhere, never seeing a counterexample."
+            "correct": "No. A function must be analytic for its Taylor series to converge to it. The Taylor series may converge to a different function or diverge entirely outside the radius of convergence.",
+            "why_students_believe_it": "Students work only with standard functions (sin, cos, e^x) whose Taylor series converge everywhere."
         },
         {
             "id": "DC05",
             "misconception": "The derivative of a product is the product of derivatives",
             "danger": "CRITICAL",
             "question": "What is the derivative of f(x) = x² · sin(x)? Write your first instinct, then verify.",
-            "correct": "d/dx(uv) = u·(dv/dx) + v·(du/dx). NOT d/dx(uv) = (du/dx)·(dv/dx). This is the product rule. The correct answer is x²·cos(x) + 2x·sin(x). Students who believe the misconception write 2x·cos(x) and lose full marks.",
+            "correct": "d/dx(uv) = u·(dv/dx) + v·(du/dx). NOT d/dx(uv) = (du/dx)·(dv/dx). The correct answer is x²·cos(x) + 2x·sin(x).",
             "why_students_believe_it": "Analogy with exponent rules: (uv)^n = u^n·v^n. Students incorrectly extend this pattern to derivatives."
         }
     ],
@@ -1934,7 +1763,7 @@ MISCONCEPTIONS = {
             "misconception": "Mixed partial derivatives are always equal",
             "danger": "MEDIUM",
             "question": "Is it always true that ∂²f/∂x∂y = ∂²f/∂y∂x for any function f(x,y)?",
-            "correct": "Clairaut's theorem states mixed partials are equal ONLY if both mixed partials are continuous in a neighbourhood of the point. This condition is satisfied for most functions in engineering, but it is NOT universally true. Students must state the continuity condition in exams.",
+            "correct": "Clairaut's theorem states mixed partials are equal ONLY if both mixed partials are continuous in a neighbourhood of the point.",
             "why_students_believe_it": "Clairaut's theorem is taught without emphasis on its conditions."
         },
         {
@@ -1942,7 +1771,7 @@ MISCONCEPTIONS = {
             "misconception": "If both partial derivatives exist, the function is differentiable",
             "danger": "HIGH",
             "question": "If ∂f/∂x and ∂f/∂y both exist at a point, does that guarantee f is differentiable there?",
-            "correct": "No. Existence of partial derivatives does NOT imply differentiability. A function can have both partial derivatives existing at a point while being discontinuous there. Differentiability requires the partial derivatives to be continuous.",
+            "correct": "No. Existence of partial derivatives does NOT imply differentiability. A function can have both partial derivatives existing at a point while being discontinuous there.",
             "why_students_believe_it": "Single-variable analogy: if f'(x) exists, f is differentiable. This does not extend to multiple variables."
         },
         {
@@ -1950,7 +1779,7 @@ MISCONCEPTIONS = {
             "misconception": "Euler's theorem applies to all functions of two variables",
             "danger": "HIGH",
             "question": "Can you apply Euler's theorem to f(x,y) = x² + y² + 1? Why or why not?",
-            "correct": "Euler's theorem x·∂f/∂x + y·∂f/∂y = n·f applies ONLY to homogeneous functions of degree n. f(x,y) = x²+y²+1 is NOT homogeneous because of the constant term. Always verify homogeneity first.",
+            "correct": "Euler's theorem applies ONLY to homogeneous functions of degree n. f(x,y) = x²+y²+1 is NOT homogeneous because of the constant term.",
             "why_students_believe_it": "Students apply Euler's theorem mechanically without checking the homogeneity condition."
         }
     ],
@@ -1960,7 +1789,7 @@ MISCONCEPTIONS = {
             "misconception": "If the integral of f from a to b is zero, then f must be zero",
             "danger": "HIGH",
             "question": "If ∫₀^π sin(x) dx = 0... wait, does it? Calculate it. What does a zero integral actually mean geometrically?",
-            "correct": "∫₀^π sin(x) dx = 2, not zero. But ∫₀^{2π} sin(x) dx = 0 even though sin(x) is never identically zero. A zero integral means the positive and negative areas cancel — not that the function is zero.",
+            "correct": "∫₀^π sin(x) dx = 2, not zero. But ∫₀^{2π} sin(x) dx = 0 even though sin(x) is never identically zero. A zero integral means positive and negative areas cancel.",
             "why_students_believe_it": "Students think of integration as measuring 'total function value' rather than signed area."
         },
         {
@@ -1968,7 +1797,7 @@ MISCONCEPTIONS = {
             "misconception": "Integration and differentiation always undo each other perfectly",
             "danger": "MEDIUM",
             "question": "If F(x) = ∫₀ˣ f(t)dt, is it always true that F'(x) = f(x)?",
-            "correct": "Yes — but only when f is continuous. The Fundamental Theorem of Calculus requires continuity of f. Also: d/dx[∫f(x)dx] = f(x) but ∫[d/dx f(x)]dx = f(x) + C. The constant of integration is critical.",
+            "correct": "Yes — but only when f is continuous. The Fundamental Theorem of Calculus requires continuity of f. Also the constant of integration is critical.",
             "why_students_believe_it": "The relationship is taught as absolute without stating continuity requirements."
         },
         {
@@ -1976,7 +1805,7 @@ MISCONCEPTIONS = {
             "misconception": "The order of integration in double integrals can always be swapped without changing limits",
             "danger": "CRITICAL",
             "question": "To change the order of ∫₀¹∫ₓ¹ f(x,y) dy dx, can you just write ∫₀¹∫₀¹ f(x,y) dx dy?",
-            "correct": "No — changing the order of integration ALWAYS requires rewriting the limits by sketching the region. The original integral integrates y from x to 1, and x from 0 to 1. After changing order: y goes from 0 to 1, and x goes from 0 to y.",
+            "correct": "No — changing the order of integration ALWAYS requires rewriting the limits by sketching the region.",
             "why_students_believe_it": "Students think of double integrals as two independent single integrals."
         },
         {
@@ -1984,7 +1813,7 @@ MISCONCEPTIONS = {
             "misconception": "Beta function B(m,n) = B(n,m) means the integral limits are symmetric",
             "danger": "MEDIUM",
             "question": "Why is B(m,n) = B(n,m)? Is it because the limits of integration are symmetric?",
-            "correct": "B(m,n) = ∫₀¹ x^(m-1)(1-x)^(n-1)dx. The symmetry B(m,n)=B(n,m) comes from the substitution x→(1-x), not from symmetric limits.",
+            "correct": "The symmetry B(m,n)=B(n,m) comes from the substitution x→(1-x), not from symmetric limits.",
             "why_students_believe_it": "Students see the result is symmetric and assume the reason is symmetry of limits."
         }
     ],
@@ -1994,7 +1823,7 @@ MISCONCEPTIONS = {
             "misconception": "If the nth term goes to zero, the series converges",
             "danger": "CRITICAL",
             "question": "The harmonic series has terms 1/n → 0. Does it converge?",
-            "correct": "No — the harmonic series Σ(1/n) diverges even though 1/n → 0. The nth term going to zero is NECESSARY but NOT SUFFICIENT for convergence. The divergence test only works one way: if aₙ does NOT go to zero, the series definitely diverges. If aₙ → 0, you need another test.",
+            "correct": "No — the harmonic series Σ(1/n) diverges even though 1/n → 0. The nth term going to zero is NECESSARY but NOT SUFFICIENT for convergence.",
             "why_students_believe_it": "The divergence test is taught as the first test, and students incorrectly apply its contrapositive."
         },
         {
@@ -2002,15 +1831,15 @@ MISCONCEPTIONS = {
             "misconception": "Absolute convergence and conditional convergence give the same sum",
             "danger": "HIGH",
             "question": "The alternating harmonic series Σ(-1)^(n+1)/n converges to ln(2). If we rearrange its terms, do we still get ln(2)?",
-            "correct": "No — by the Riemann rearrangement theorem, a conditionally convergent series can be rearranged to converge to ANY real number, or to diverge. Only absolutely convergent series are immune to rearrangement.",
+            "correct": "No — by the Riemann rearrangement theorem, a conditionally convergent series can be rearranged to converge to ANY real number.",
             "why_students_believe_it": "Students assume addition is commutative for infinite sums, just as it is for finite sums."
         },
         {
             "id": "IS03",
             "misconception": "The ratio test always gives a conclusive answer",
             "danger": "MEDIUM",
-            "question": "Apply the ratio test to Σ(1/n²). What happens? Does it converge or diverge?",
-            "correct": "The ratio test gives L = lim(n→∞) (n/(n+1))² = 1 — INCONCLUSIVE. When L=1, the ratio test fails and you must use another test (here the p-series test with p=2>1 confirms convergence).",
+            "question": "Apply the ratio test to Σ(1/n²). What happens?",
+            "correct": "The ratio test gives L = 1 — INCONCLUSIVE. When L=1, you must use another test.",
             "why_students_believe_it": "Students learn the ratio test as the 'universal' test and don't know what to do when it fails."
         }
     ],
@@ -2020,7 +1849,7 @@ MISCONCEPTIONS = {
             "misconception": "Eigenvalues are always real numbers",
             "danger": "HIGH",
             "question": "Find the eigenvalues of the matrix [[0, -1], [1, 0]]. Are they real?",
-            "correct": "The characteristic equation is λ²+1=0, giving λ=±i — complex eigenvalues. Real eigenvalues are guaranteed ONLY for symmetric matrices (by the spectral theorem).",
+            "correct": "The characteristic equation is λ²+1=0, giving λ=±i — complex eigenvalues. Real eigenvalues are guaranteed ONLY for symmetric matrices.",
             "why_students_believe_it": "Most textbook examples use symmetric matrices which always have real eigenvalues."
         },
         {
@@ -2028,32 +1857,32 @@ MISCONCEPTIONS = {
             "misconception": "If AB = 0 then A = 0 or B = 0",
             "danger": "CRITICAL",
             "question": "Give an example of two non-zero matrices A and B where AB = 0.",
-            "correct": "A = [[1,0],[0,0]] and B = [[0,0],[0,1]] gives AB = 0 with neither A nor B being zero. This is called zero divisors. The cancellation law of real numbers does NOT apply to matrices.",
+            "correct": "A = [[1,0],[0,0]] and B = [[0,0],[0,1]] gives AB = 0 with neither being zero. The cancellation law does NOT apply to matrices.",
             "why_students_believe_it": "Direct analogy from real numbers where ab=0 implies a=0 or b=0."
         },
         {
             "id": "LA03",
             "misconception": "Rank of a matrix equals the number of non-zero rows",
             "danger": "HIGH",
-            "question": "What is the rank of the matrix [[1,2,3],[2,4,6],[0,0,0]]?",
-            "correct": "Rank = 1, not 2. Row 2 is twice row 1, so after row reduction it becomes zero. Rank is the number of non-zero rows in ROW ECHELON FORM — not in the original matrix.",
-            "why_students_believe_it": "Students confuse 'non-zero rows in the original matrix' with 'non-zero rows after row reduction'."
+            "question": "What is the rank of [[1,2,3],[2,4,6],[0,0,0]]?",
+            "correct": "Rank = 1, not 2. Row 2 is twice row 1. Rank is non-zero rows in ROW ECHELON FORM.",
+            "why_students_believe_it": "Students confuse non-zero rows in original matrix with non-zero rows after row reduction."
         },
         {
             "id": "LA04",
             "misconception": "A matrix with all non-zero entries is always invertible",
             "danger": "HIGH",
-            "question": "Is the matrix [[1,2],[2,4]] invertible? All its entries are non-zero.",
-            "correct": "No — det([[1,2],[2,4]]) = 4-4 = 0, so it is singular. A matrix is invertible if and only if its determinant is non-zero.",
+            "question": "Is [[1,2],[2,4]] invertible? All its entries are non-zero.",
+            "correct": "No — det = 4-4 = 0, so it is singular. Invertible iff determinant is non-zero.",
             "why_students_believe_it": "Students confuse 'non-zero matrix' with 'invertible matrix'."
         },
         {
             "id": "LA05",
-            "misconception": "Cayley-Hamilton theorem means a matrix satisfies its own characteristic equation as a number would",
+            "misconception": "Cayley-Hamilton means a matrix satisfies its characteristic equation as a number would",
             "danger": "MEDIUM",
-            "question": "If the characteristic equation of A is λ²-3λ+2=0, what does Cayley-Hamilton say? Write the matrix equation.",
-            "correct": "Cayley-Hamilton says A²-3A+2I=0 where I is the identity matrix. Students often write A²-3A+2=0 without the identity matrix, which is meaningless.",
-            "why_students_believe_it": "Students substitute A into the scalar equation without converting scalar terms to matrix form."
+            "question": "If characteristic equation is λ²-3λ+2=0, write the matrix equation.",
+            "correct": "A²-3A+2I=0 where I is identity. Students often write A²-3A+2=0 without the identity matrix.",
+            "why_students_believe_it": "Students substitute A into scalar equation without converting scalar terms to matrix form."
         }
     ],
     "ode_first": [
@@ -2062,50 +1891,50 @@ MISCONCEPTIONS = {
             "misconception": "Every first order ODE can be solved by separating variables",
             "danger": "HIGH",
             "question": "Identify which method applies: dy/dx = (x+y)/(x-y). Can you separate variables here?",
-            "correct": "No — this equation cannot be separated. It is a homogeneous equation, solved by substitution y=vx. Always identify the type first.",
-            "why_students_believe_it": "Variables separable is taught first and students default to it for every ODE."
+            "correct": "No — this is a homogeneous equation, solved by substitution y=vx. Always identify the type first.",
+            "why_students_believe_it": "Variables separable is taught first and students default to it."
         },
         {
             "id": "OF02",
             "misconception": "The integrating factor for a linear ODE is always e^(∫P dx)",
             "danger": "MEDIUM",
             "question": "The standard form is dy/dx + P(x)y = Q(x). What if the equation is dx/dy + P(y)x = Q(y)?",
-            "correct": "When x is the dependent variable (dx/dy form), the integrating factor is e^(∫P(y)dy) — not e^(∫P dx). Students must first identify which variable is dependent.",
-            "why_students_believe_it": "Students memorise the formula for dy/dx form and apply it blindly to all linear ODEs."
+            "correct": "When x is dependent (dx/dy form), the integrating factor is e^(∫P(y)dy). Students must identify which variable is dependent.",
+            "why_students_believe_it": "Students memorise the dy/dx form and apply it blindly."
         },
         {
             "id": "OF03",
             "misconception": "An exact equation M dx + N dy = 0 has solution F where ∂F/∂x = N",
             "danger": "CRITICAL",
-            "question": "For the exact equation M dx + N dy = 0, is ∂F/∂x = M or ∂F/∂x = N?",
-            "correct": "∂F/∂x = M and ∂F/∂y = N. Many students swap M and N when integrating to find F.",
-            "why_students_believe_it": "Confusion between the test condition (∂M/∂y = ∂N/∂x) and the integration conditions."
+            "question": "For exact equation M dx + N dy = 0, is ∂F/∂x = M or ∂F/∂x = N?",
+            "correct": "∂F/∂x = M and ∂F/∂y = N. Many students swap M and N.",
+            "why_students_believe_it": "Confusion between the test condition and the integration conditions."
         }
     ],
     "ode_higher": [
         {
             "id": "OH01",
-            "misconception": "Particular integral for e^(ax) fails only when a is a root of the auxiliary equation",
+            "misconception": "PI for e^(ax) fails only when a is a root of the auxiliary equation",
             "danger": "HIGH",
-            "question": "Find PI for y'' - 2y' + y = e^x. What is the auxiliary equation? Is the PI formula e^x/f(1)?",
-            "correct": "The auxiliary equation is (D-1)²=0, so D=1 is a repeated root. For a repeated root of multiplicity r, PI = x^r·e^(ax)/f^(r)(a). Students only remember the simple root case.",
-            "why_students_believe_it": "Textbooks often show the simple failure case without emphasising the repeated root case."
+            "question": "Find PI for y'' - 2y' + y = e^x. Is D=1 a simple or repeated root?",
+            "correct": "D=1 is a repeated root (multiplicity 2). For repeated root of multiplicity r, PI = x^r·e^(ax)/f^(r)(a).",
+            "why_students_believe_it": "Textbooks often show simple failure case without emphasising repeated root case."
         },
         {
             "id": "OH02",
             "misconception": "The general solution is just the particular integral",
             "danger": "CRITICAL",
-            "question": "You found that y = x²e^x satisfies y'' - 2y' + y = 2e^x. Is this the complete general solution?",
-            "correct": "No — the complete general solution is y = CF + PI = (c₁ + c₂x)e^x + x²e^x. Missing the complementary function loses all marks.",
-            "why_students_believe_it": "Students focus on finding the particular integral and forget to add the complementary function."
+            "question": "You found PI = x²e^x for y'' - 2y' + y = 2e^x. Is this the complete solution?",
+            "correct": "No — complete solution is y = CF + PI = (c₁ + c₂x)e^x + x²e^x.",
+            "why_students_believe_it": "Students focus on PI and forget to add CF."
         },
         {
             "id": "OH03",
-            "misconception": "Wronskian being zero at one point means the functions are linearly dependent",
+            "misconception": "Wronskian being zero at one point means functions are linearly dependent",
             "danger": "HIGH",
-            "question": "If W(f,g)(x₀) = 0 at a single point x₀, does that mean f and g are linearly dependent?",
-            "correct": "No. For solutions of a linear ODE, the Wronskian is either identically zero everywhere (dependent) or never zero (independent). This is Abel's theorem.",
-            "why_students_believe_it": "Students check the Wronskian at one convenient point rather than understanding its behaviour."
+            "question": "If W(f,g)(x₀) = 0 at a single point, are f and g linearly dependent?",
+            "correct": "For solutions of a linear ODE, Wronskian is either identically zero or never zero (Abel's theorem).",
+            "why_students_believe_it": "Students check Wronskian at one convenient point rather than understanding its behaviour."
         }
     ],
     "laplace": [
@@ -2113,25 +1942,25 @@ MISCONCEPTIONS = {
             "id": "LT01",
             "misconception": "Laplace transform of a product is the product of Laplace transforms",
             "danger": "CRITICAL",
-            "question": "Is L{t·sin(t)} = L{t} · L{sin(t)} = (1/s²)·(1/(s²+1))?",
-            "correct": "No — L{f·g} ≠ L{f}·L{g}. The correct result uses L{tⁿf(t)} = (-1)ⁿ dⁿ/dsⁿ [F(s)]. Product of transforms gives convolution, not product.",
-            "why_students_believe_it": "Analogy with linearity: L{f+g} = L{f}+L{g} makes students think multiplication also distributes."
+            "question": "Is L{t·sin(t)} = L{t} · L{sin(t)}?",
+            "correct": "No — L{f·g} ≠ L{f}·L{g}. Use L{tⁿf(t)} = (-1)ⁿ dⁿ/dsⁿ [F(s)]. Product of transforms gives convolution.",
+            "why_students_believe_it": "Analogy with linearity L{f+g} = L{f}+L{g}."
         },
         {
             "id": "LT02",
             "misconception": "Initial conditions are applied after finding the general solution",
             "danger": "HIGH",
-            "question": "When solving an IVP using Laplace transforms, when exactly do the initial conditions appear?",
-            "correct": "Initial conditions appear DURING the transformation step: L{y''} = s²Y(s) - sy(0) - y'(0). Not at the end.",
-            "why_students_believe_it": "Classical method habit: solve ODE first, apply initial conditions last."
+            "question": "When solving an IVP using Laplace, when do initial conditions appear?",
+            "correct": "Initial conditions appear DURING transformation: L{y''} = s²Y(s) - sy(0) - y'(0).",
+            "why_students_believe_it": "Classical method habit: solve first, apply ICs last."
         },
         {
             "id": "LT03",
-            "misconception": "Inverse Laplace transform of F(s)·G(s) is f(t)·g(t)",
+            "misconception": "Inverse Laplace of F(s)·G(s) is f(t)·g(t)",
             "danger": "CRITICAL",
-            "question": "Find L⁻¹{1/(s(s+1))} — is it L⁻¹{1/s} · L⁻¹{1/(s+1)} = 1·e^(-t)?",
-            "correct": "No — L⁻¹{F(s)·G(s)} = f(t)*g(t) (convolution), not the product. Use partial fractions: 1/(s(s+1)) = 1/s - 1/(s+1), giving L⁻¹ = 1 - e^(-t).",
-            "why_students_believe_it": "Students reverse the wrong 'rule' L{f·g} = L{f}·L{g}."
+            "question": "Find L⁻¹{1/(s(s+1))} — is it 1·e^(-t)?",
+            "correct": "No — use partial fractions: 1/(s(s+1)) = 1/s - 1/(s+1), giving L⁻¹ = 1 - e^(-t).",
+            "why_students_believe_it": "Students reverse the wrong rule."
         }
     ],
     "vector_calc": [
@@ -2139,8 +1968,8 @@ MISCONCEPTIONS = {
             "id": "VC01",
             "misconception": "div(curl F) = curl(div F)",
             "danger": "HIGH",
-            "question": "What is div(curl F)? What is curl(div F)? Are they the same?",
-            "correct": "div(curl F) = 0 always (identity). curl(div F) is meaningless — div F is a scalar, curl needs a vector input.",
+            "question": "What is div(curl F)? What is curl(div F)?",
+            "correct": "div(curl F) = 0 always (identity). curl(div F) is meaningless — div F is scalar, curl needs vector.",
             "why_students_believe_it": "Students treat div and curl as interchangeable operators."
         },
         {
@@ -2148,42 +1977,42 @@ MISCONCEPTIONS = {
             "misconception": "A vector field with zero curl is always conservative",
             "danger": "HIGH",
             "question": "If curl F = 0 everywhere, is F necessarily conservative?",
-            "correct": "Only if the domain is simply connected. In multiply connected domains, curl F = 0 does not imply conservative.",
+            "correct": "Only if the domain is simply connected.",
             "why_students_believe_it": "The theorem is taught without the simply-connected condition."
         },
         {
             "id": "VC03",
             "misconception": "Green's, Stokes' and Gauss's theorems are three separate unrelated results",
             "danger": "MEDIUM",
-            "question": "How are Green's theorem, Stokes' theorem, and Gauss's divergence theorem related?",
-            "correct": "All three are special cases of the Generalised Stokes' theorem. Green's is 2D, Stokes relates surface to boundary line, Gauss relates volume to boundary surface.",
+            "question": "How are these three theorems related?",
+            "correct": "All three are special cases of the Generalised Stokes' theorem.",
             "why_students_believe_it": "They are taught as three separate named theorems."
         }
-        ],
+    ],
     "complex_analysis": [
         {
             "id": "CA01",
             "misconception": "An analytic function is just a function you can write a formula for",
             "danger": "HIGH",
-            "question": "Is f(z) = z̄ (complex conjugate) analytic? It has a simple formula.",
-            "correct": "No — f(z) = z̄ = x - iy fails the Cauchy-Riemann equations: u=x, v=-y gives ∂u/∂x=1 but ∂v/∂y=-1, so CR is violated everywhere. Analytic means the derivative exists in the complex sense — much stronger than having a formula.",
+            "question": "Is f(z) = z̄ (complex conjugate) analytic?",
+            "correct": "No — f(z) = z̄ fails Cauchy-Riemann equations. Analytic means complex-differentiable.",
             "why_students_believe_it": "Analogy with real analysis where differentiable ≈ has a formula."
         },
         {
             "id": "CA02",
             "misconception": "Cauchy's theorem means every complex integral around a closed curve is zero",
             "danger": "CRITICAL",
-            "question": "Is ∮_C dz/z = 0 for C being the unit circle? Apply Cauchy's theorem.",
-            "correct": "No — ∮_C dz/z = 2πi. Cauchy's theorem requires the function to be ANALYTIC INSIDE AND ON the contour. f(z)=1/z has a singularity at z=0 inside the unit circle.",
-            "why_students_believe_it": "Students apply Cauchy's theorem without checking whether singularities lie inside the contour."
+            "question": "Is ∮_C dz/z = 0 for C being the unit circle?",
+            "correct": "No — ∮_C dz/z = 2πi. f(z)=1/z has singularity at z=0 inside the contour.",
+            "why_students_believe_it": "Students apply Cauchy's theorem without checking for singularities."
         },
         {
             "id": "CA03",
-            "misconception": "The residue at a pole is always the numerator divided by the derivative of the denominator",
+            "misconception": "The residue at a pole is always numerator/derivative of denominator",
             "danger": "HIGH",
-            "question": "Find the residue of f(z) = 1/(z²(z-1)) at z=0. Is it 1/2z|_{z=0}?",
-            "correct": "z=0 is a pole of order 2, not a simple pole. The simple pole formula only works for simple poles. For pole of order m, use the higher order formula.",
-            "why_students_believe_it": "The simple pole formula is taught first and most prominently."
+            "question": "Find residue of 1/(z²(z-1)) at z=0.",
+            "correct": "z=0 is pole of order 2. Simple pole formula only works for simple poles.",
+            "why_students_believe_it": "Simple pole formula is taught first and most prominently."
         }
     ],
     "fourier_series": [
@@ -2191,24 +2020,24 @@ MISCONCEPTIONS = {
             "id": "FS01",
             "misconception": "Fourier series always converges to f(x) at every point",
             "danger": "HIGH",
-            "question": "At a point of discontinuity x₀, what value does the Fourier series converge to?",
-            "correct": "At a discontinuity, Fourier series converges to the AVERAGE of left and right limits: [f(x₀⁺) + f(x₀⁻)]/2. This is the Dirichlet condition.",
+            "question": "At a discontinuity x₀, what does the Fourier series converge to?",
+            "correct": "At discontinuity, converges to AVERAGE of left and right limits: [f(x₀⁺) + f(x₀⁻)]/2.",
             "why_students_believe_it": "The series is called 'of f(x)' suggesting it equals f(x) everywhere."
         },
         {
             "id": "FS02",
             "misconception": "Any function can be represented by a Fourier series",
             "danger": "MEDIUM",
-            "question": "What conditions must f(x) satisfy for its Fourier series to exist and converge?",
-            "correct": "Dirichlet conditions: (1) periodic, (2) bounded, (3) finite number of maxima, minima, and discontinuities in one period.",
-            "why_students_believe_it": "Textbooks jump straight to computing without emphasising validity conditions."
+            "question": "What conditions must f(x) satisfy?",
+            "correct": "Dirichlet conditions: periodic, bounded, finite number of maxima/minima/discontinuities.",
+            "why_students_believe_it": "Textbooks jump straight to computing without emphasising conditions."
         },
         {
             "id": "FS03",
             "misconception": "For an odd function, a₀ = 0 because the average is zero",
             "danger": "MEDIUM",
-            "question": "Why is a₀ = 0 for an odd function f(x) on [-L, L]?",
-            "correct": "a₀ = (1/L)∫₋ₗᴸ f(x)dx. For odd function f(-x)=-f(x), integral over symmetric interval is zero. ALL cosine coefficients aₙ = 0 for odd functions.",
+            "question": "Why is a₀ = 0 for an odd function?",
+            "correct": "For odd function f(-x)=-f(x), integral over symmetric interval is zero. ALL aₙ = 0.",
             "why_students_believe_it": "Students memorise the result but cannot explain the reasoning."
         }
     ],
@@ -2217,69 +2046,69 @@ MISCONCEPTIONS = {
             "id": "PR01",
             "misconception": "P(A∩B) = P(A)·P(B) always",
             "danger": "CRITICAL",
-            "question": "A card is drawn from a deck. A = 'red', B = 'king'. Are A and B independent? Calculate P(A∩B) both ways.",
-            "correct": "P(A∩B) = P(A)·P(B) is the DEFINITION of independence, not a general rule. For dependent events, use P(A∩B) = P(A)·P(B|A).",
-            "why_students_believe_it": "Students see multiplication rule in independent examples and generalise incorrectly."
+            "question": "A card is drawn. A='red', B='king'. Are they independent?",
+            "correct": "P(A∩B) = P(A)·P(B) is the DEFINITION of independence. For dependent events use P(A∩B) = P(A)·P(B|A).",
+            "why_students_believe_it": "Students see multiplication rule in independent examples and generalise."
         },
         {
             "id": "PR02",
             "misconception": "The mean of a normal distribution is always 0",
             "danger": "HIGH",
-            "question": "If X ~ N(μ, σ²), what are the mean and variance? When is the mean zero?",
-            "correct": "Mean = μ, Variance = σ². Mean is zero only for STANDARD normal N(0,1). Always convert using Z = (X-μ)/σ.",
-            "why_students_believe_it": "Z-tables use standard normal and students confuse standard with general form."
+            "question": "If X ~ N(μ, σ²), when is the mean zero?",
+            "correct": "Mean = μ. Zero only for STANDARD normal N(0,1). Always convert using Z = (X-μ)/σ.",
+            "why_students_believe_it": "Z-tables use standard normal and students confuse standard with general."
         },
         {
             "id": "PR03",
-            "misconception": "Variance can be negative if the data has more negative values",
+            "misconception": "Variance can be negative",
             "danger": "HIGH",
-            "question": "Can Var(X) ever be negative? What is Var(X) if X always takes the same value?",
-            "correct": "Variance is ALWAYS non-negative. Var(X) = E[(X-μ)²] ≥ 0 because it is expectation of a squared quantity. If constant, Var(X) = 0.",
+            "question": "Can Var(X) ever be negative?",
+            "correct": "Variance is ALWAYS ≥ 0. Var(X) = E[(X-μ)²] ≥ 0 because it is expectation of squared quantity.",
             "why_students_believe_it": "Students confuse variance with deviations (X-μ) which can be negative."
         }
     ],
     "numerical": [
         {
             "id": "NM01",
-            "misconception": "Newton-Raphson always converges to the correct root",
+            "misconception": "Newton-Raphson always converges",
             "danger": "HIGH",
-            "question": "Can Newton-Raphson method fail to converge? Give a condition when it might diverge.",
-            "correct": "Newton-Raphson can FAIL if: (1) f'(xₙ)=0, (2) initial guess too far, (3) multiple roots nearby. Not globally convergent.",
+            "question": "Can Newton-Raphson fail to converge?",
+            "correct": "Yes — fails if f'(xₙ)=0, initial guess too far, or multiple roots nearby.",
             "why_students_believe_it": "Textbook examples are chosen to always converge."
         },
         {
             "id": "NM02",
-            "misconception": "Simpson's 1/3 rule can be applied for any number of subintervals",
+            "misconception": "Simpson's 1/3 rule works for any number of subintervals",
             "danger": "CRITICAL",
-            "question": "You want to apply Simpson's 1/3 rule with 5 subintervals. Can you?",
-            "correct": "Simpson's 1/3 rule REQUIRES an EVEN number of subintervals. With 5 subintervals you CANNOT apply it.",
-            "why_students_believe_it": "Students memorise the formula without remembering the constraint on n."
+            "question": "Apply Simpson's 1/3 with 5 subintervals. Can you?",
+            "correct": "No — requires EVEN number of subintervals.",
+            "why_students_believe_it": "Students memorise formula without remembering constraint."
         },
         {
             "id": "NM03",
             "misconception": "More iterations always means more accuracy in Newton-Raphson",
             "danger": "MEDIUM",
-            "question": "After convergence to 1.4142135, should you do more iterations?",
+            "question": "After converging to 1.4142135, should you do more iterations?",
             "correct": "Stop when |xₙ₊₁ - xₙ| < ε. More iterations past convergence just repeat digits.",
-            "why_students_believe_it": "Students think more iterations = more accurate without understanding convergence criteria."
+            "why_students_believe_it": "Students think more = better without understanding convergence."
         }
     ],
     "transforms": [
         {
             "id": "TR01",
-            "misconception": "Z-transform and Laplace transform are just different names for the same thing",
+            "misconception": "Z-transform and Laplace transform are the same thing",
             "danger": "HIGH",
-            "question": "What is the fundamental difference between Z-transform and Laplace transform?",
-            "correct": "Laplace is for continuous-time: F(s) = ∫₀^∞ f(t)e^(-st)dt. Z-transform is for discrete-time: X(z) = Σₙ x[n]z^(-n). Connected by z = e^(sT).",
-            "why_students_believe_it": "Both convert time-domain to algebraic — students see similarity but miss the fundamental difference."
+            "question": "What is the fundamental difference?",
+            "correct": "Laplace is continuous-time. Z-transform is discrete-time. Connected by z = e^(sT).",
+            "why_students_believe_it": "Both convert time-domain to algebraic."
         },
         {
             "id": "TR02",
-            "misconception": "Region of Convergence (ROC) is always the entire z-plane",
+            "misconception": "ROC is always the entire z-plane",
             "danger": "HIGH",
-            "question": "What is the ROC of X(z) = z/(z-0.5) for a causal sequence?",
-            "correct": "ROC = {|z| > 0.5}. For causal sequences ROC is exterior to a circle. ROC MUST be stated with every Z-transform answer.",
-            "why_students_believe_it": "Students compute the transform correctly but treat ROC as an afterthought."
+            "question": "What is the ROC of z/(z-0.5) for causal sequence?",
+            "correct": "ROC = {|z| > 0.5}. ROC MUST be stated with every Z-transform.",
+            "why_students_believe_it": "Students treat ROC as afterthought."
         }
     ]
 }
@@ -2288,7 +2117,6 @@ MISCONCEPTIONS = {
 #  MISCONCEPTION DETECTOR PROMPT
 # ══════════════════════════════════════════════════════════════
 def build_misconception_prompt(topic_key, student_answer, question_id):
-    """Evaluate student's free-text answer against known misconceptions"""
     topic_misconceptions = MISCONCEPTIONS.get(topic_key, [])
     question_data = None
     for m in topic_misconceptions:
@@ -2300,8 +2128,6 @@ def build_misconception_prompt(topic_key, student_answer, question_id):
         return None
 
     return f"""You are MathSphere's Misconception Detector — a specialist in mathematics education.
-
-You have asked a diagnostic question to probe a specific misconception.
 
 MISCONCEPTION BEING PROBED: {question_data['misconception']}
 DANGER LEVEL: {question_data['danger']}
@@ -2318,242 +2144,149 @@ CORRECT UNDERSTANDING:
 WHY STUDENTS HOLD THIS MISCONCEPTION:
 {question_data['why_students_believe_it']}
 
-YOUR TASK — analyse the student's answer carefully:
-
 DIAGNOSIS:
-[State clearly: does the student's answer reveal the misconception, a partial misconception, or correct understanding?
-Quote the specific phrase in their answer that reveals this.]
+[Does the student's answer reveal the misconception, partial misconception, or correct understanding?]
 
 WHAT THIS TELLS US:
-[Explain precisely what mental model the student has]
+[What mental model the student has]
 
 THE CORRECT UNDERSTANDING:
-[Explain the correct understanding clearly and gently]
+[Explain correctly and gently]
 
 THE COUNTEREXAMPLE THAT BREAKS THE MISCONCEPTION:
-[Give one specific numerical counterexample that makes the misconception obviously wrong]
+[One specific numerical counterexample]
 
 HOW THIS AFFECTS EXAM PERFORMANCE:
-[Describe exactly which exam questions this misconception will cause errors in]
+[Which exam questions this causes errors in]
 
 HOW TO FIX THIS PERMANENTLY:
-[One specific mental reframe or visual image that replaces the wrong belief]
+[One mental reframe or visual image]
 
 CONFIDENCE IN DIAGNOSIS: HIGH / MEDIUM / LOW
 
-Tone: Warm, non-judgmental, encouraging. Never say "wrong" — say "this is a very common belief, and here is what is actually happening."
+Tone: Warm, non-judgmental, encouraging.
 """
 
 
 # ══════════════════════════════════════════════════════════════
-#  MISCONCEPTION ROUTES
+#  TOPIC ROADMAP BUILDER (no AI call)
 # ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/misconceptions", methods=["POST"])
-def get_misconceptions():
-    """Return diagnostic questions for a topic"""
-    try:
-        data, err, code = validate_json("topic")
-        if err:
-            return err, code
-        topic = data.get("topic", "")
-        topic_misconceptions = MISCONCEPTIONS.get(topic, [])
-        questions = [{
-            "id":            m["id"],
-            "question":      m["question"],
-            "danger":        m["danger"],
-            "misconception": m["misconception"]
-        } for m in topic_misconceptions]
-        return jsonify({"questions": questions, "topic": topic})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+def build_roadmap(topic_key):
+    for sem_key, sem_data in SYLLABUS.items():
+        if topic_key in sem_data["topics"]:
+            topic_data = sem_data["topics"][topic_key]
+            subtopics = topic_data["subtopics"]
+            total = len(subtopics)
 
-@eng_bp.route("/eng/diagnose", methods=["POST"])
-def diagnose():
-    """Evaluate student answer and provide misconception diagnosis"""
-    try:
-        data, err, code = validate_json("topic", "question_id", "answer")
-        if err:
-            return err, code
-        topic          = data.get("topic", "")
-        question_id    = data.get("question_id", "")
-        student_answer = data.get("answer", "")
-        prompt = build_misconception_prompt(topic, student_answer, question_id)
-        if not prompt:
-            return jsonify({"error": "Question not found"}), 404
-        response, source = get_eng_response(prompt)
+            phases = []
+            chunk_size = max(1, total // 4)
+            phase_names = ["Foundation", "Core Concepts", "Advanced Methods", "Exam Mastery"]
+            phase_descriptions = [
+                "Build the basics — definitions, notation, simple examples",
+                "Master the main theorems and standard problems",
+                "Tackle harder problems, proofs, and special cases",
+                "Practice exam-style problems and revision"
+            ]
 
-        # Track misconception in progress
-        student_id = data.get("student_id", "anonymous")
-        update_progress(student_id, "misconception_found", {"misconception_id": question_id})
+            for i, (name, desc) in enumerate(zip(phase_names, phase_descriptions)):
+                start = i * chunk_size
+                end = start + chunk_size if i < 3 else total
+                phase_subtopics = subtopics[start:end] if start < total else []
+                phases.append({
+                    "phase":           i + 1,
+                    "name":            name,
+                    "description":     desc,
+                    "subtopics":       phase_subtopics,
+                    "estimated_hours": max(1, len(phase_subtopics) * 2)
+                })
 
-        return jsonify({"response": response, "source": source})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            topic_prereqs = {}
+            for st in subtopics:
+                for key, val in PREREQUISITES.items():
+                    if key.lower() in st.lower() or st.lower() in key.lower():
+                        topic_prereqs[key] = val
 
-
+            return {
+                "topic":           topic_data["label"],
+                "total_subtopics": total,
+                "estimated_hours": total * 2,
+                "phases":          phases,
+                "prerequisites":   topic_prereqs,
+                "references":      REFERENCES.get(topic_key, [])
+            }
+    return None
 # ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Step-by-Step Solver
+#  STUDENT PROGRESS TRACKER (thread-safe, bounded)
 # ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/solve", methods=["POST"])
-def solve():
-    """Solve any engineering math problem step by step"""
-    try:
-        data, err, code = validate_json("problem")
-        if err:
-            return err, code
-        problem   = data.get("problem", "")
-        topic_key = data.get("topic", "")
-        prompt    = build_solve_prompt(problem, topic_key)
-        response, source = get_eng_response(prompt)
-        return jsonify({
-            "response":   response,
-            "source":     source,
-            "references": REFERENCES.get(topic_key, [])
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+_student_progress = {}
+_progress_lock    = threading.Lock()
+PROGRESS_MAX_STUDENTS = 500
+PROGRESS_MAX_LIST     = 200
 
+def get_progress(student_id):
+    with _progress_lock:
+        if student_id not in _student_progress and len(_student_progress) >= PROGRESS_MAX_STUDENTS:
+            oldest = min(_student_progress, key=lambda k: _student_progress[k].get("last_active", "0"))
+            logger.info("Evicting inactive student: %s", oldest)
+            del _student_progress[oldest]
 
-# ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Compare Methods
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/compare", methods=["POST"])
-def compare():
-    """Compare two methods or concepts side by side"""
-    try:
-        data, err, code = validate_json("method1", "method2")
-        if err:
-            return err, code
-        method1   = data.get("method1", "")
-        method2   = data.get("method2", "")
-        topic_key = data.get("topic", "")
-        prompt    = build_compare_prompt(method1, method2, topic_key)
-        response, source = get_eng_response(prompt)
-        return jsonify({
-            "response":   response,
-            "source":     source,
-            "references": REFERENCES.get(topic_key, [])
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        if student_id not in _student_progress:
+            _student_progress[student_id] = {
+                "completed_subtopics":  [],
+                "weak_areas":           [],
+                "strong_areas":         [],
+                "misconceptions_found": [],
+                "mock_tests_taken":     0,
+                "total_study_time":     0,
+                "last_active":          None
+            }
+        return _student_progress[student_id]
 
-
-# ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Exam Strategy
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/examstrategy", methods=["POST"])
-def exam_strategy():
-    """Generate topic-wise exam preparation plan"""
-    try:
-        data, err, code = validate_json("topic")
-        if err:
-            return err, code
-        topic_key       = data.get("topic", "")
-        hours_available = data.get("hours", "8")
-        prompt = build_exam_strategy_prompt(topic_key, hours_available)
-        response, source = get_eng_response(prompt)
-        return jsonify({"response": response, "source": source})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Doubt Solver
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/doubt", methods=["POST"])
-def doubt():
-    """Diagnose and resolve a specific doubt"""
-    try:
-        data, err, code = validate_json("doubt")
-        if err:
-            return err, code
-        doubt_text = data.get("doubt", "")
-        topic_key  = data.get("topic", "")
-        subtopic   = data.get("subtopic", "")
-        prompt     = build_doubt_prompt(doubt_text, topic_key, subtopic)
-        response, source = get_eng_response(prompt)
-        return jsonify({
-            "response":   response,
-            "source":     source,
-            "references": REFERENCES.get(topic_key, [])
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Topic Roadmap (no AI call)
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/roadmap", methods=["POST"])
-def roadmap():
-    """Get structured learning roadmap for a topic"""
-    try:
-        data, err, code = validate_json("topic")
-        if err:
-            return err, code
-        topic_key = data.get("topic", "")
-        roadmap_data = build_roadmap(topic_key)
-        if not roadmap_data:
-            return jsonify({"error": f"Topic '{topic_key}' not found"}), 404
-        return jsonify(roadmap_data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Progress Tracking
-# ══════════════════════════════════════════════════════════════
-@eng_bp.route("/eng/progress", methods=["GET"])
-def get_student_progress():
-    """Get progress for a student"""
-    try:
-        student_id = request.args.get("student_id", "anonymous")
+def update_progress(student_id, action, data):
+    with _progress_lock:
         progress = get_progress(student_id)
+        progress["last_active"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Calculate completion percentage per topic
-        total_subtopics = 0
-        for sem_data in SYLLABUS.values():
-            for topic_data in sem_data["topics"].values():
-                total_subtopics += len(topic_data["subtopics"])
+        if action == "complete_subtopic":
+            subtopic = data.get("subtopic", "")
+            if subtopic and subtopic not in progress["completed_subtopics"]:
+                if len(progress["completed_subtopics"]) < PROGRESS_MAX_LIST:
+                    progress["completed_subtopics"].append(subtopic)
 
-        completed = len(progress["completed_subtopics"])
-        percentage = round((completed / total_subtopics) * 100, 1) if total_subtopics > 0 else 0
+        elif action == "mark_weak":
+            subtopic = data.get("subtopic", "")
+            if subtopic and subtopic not in progress["weak_areas"]:
+                if len(progress["weak_areas"]) < PROGRESS_MAX_LIST:
+                    progress["weak_areas"].append(subtopic)
+            if subtopic in progress["strong_areas"]:
+                progress["strong_areas"].remove(subtopic)
 
-        return jsonify({
-            "progress":              progress,
-            "total_subtopics":       total_subtopics,
-            "completed_count":       completed,
-            "completion_percentage": percentage
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        elif action == "mark_strong":
+            subtopic = data.get("subtopic", "")
+            if subtopic and subtopic not in progress["strong_areas"]:
+                if len(progress["strong_areas"]) < PROGRESS_MAX_LIST:
+                    progress["strong_areas"].append(subtopic)
+            if subtopic in progress["weak_areas"]:
+                progress["weak_areas"].remove(subtopic)
 
-@eng_bp.route("/eng/progress/update", methods=["POST"])
-def update_student_progress():
-    """Update progress for a student"""
-    try:
-        data, err, code = validate_json("action")
-        if err:
-            return err, code
-        student_id = data.get("student_id", "anonymous")
-        action     = data.get("action", "")
-        valid_actions = [
-            "complete_subtopic", "mark_weak", "mark_strong",
-            "misconception_found", "mock_test", "study_time"
-        ]
-        if action not in valid_actions:
-            return jsonify({"error": f"Invalid action. Valid: {', '.join(valid_actions)}"}), 400
+        elif action == "misconception_found":
+            misconception_id = data.get("misconception_id", "")
+            if misconception_id and misconception_id not in progress["misconceptions_found"]:
+                if len(progress["misconceptions_found"]) < PROGRESS_MAX_LIST:
+                    progress["misconceptions_found"].append(misconception_id)
 
-        progress = update_progress(student_id, action, data)
-        return jsonify({"progress": progress, "message": f"Progress updated: {action}"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        elif action == "mock_test":
+            progress["mock_tests_taken"] += 1
+
+        elif action == "study_time":
+            minutes = data.get("minutes", 0)
+            progress["total_study_time"] += minutes
+
+        return progress
 
 
 # ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Quick Method Selector (no AI call)
-#  Student describes their ODE/integral/equation type,
-#  gets instant method recommendation
+#  METHOD SELECTOR (no AI call)
 # ══════════════════════════════════════════════════════════════
 METHOD_SELECTOR = {
     "ode_first_order": {
@@ -2601,7 +2334,7 @@ METHOD_SELECTOR = {
             {"check": "Is F(s) a rational function?", "yes": "Partial Fractions → lookup each term", "no": "Continue below"},
             {"check": "Does F(s) have the form F(s-a)?", "yes": "First Shifting: e^(at)·L⁻¹{F(s)}", "no": "Continue below"},
             {"check": "Does F(s) contain e^(-as)?", "yes": "Second Shifting: u(t-a)·f(t-a)", "no": "Continue below"},
-            {"check": "Is F(s) = F₁(s)·F₂(s)?", "yes": "Convolution: f₁(t) * f₂(t) = ∫₀ᵗ f₁(τ)f₂(t-τ)dτ", "no": "Try series expansion or contour integration"}
+            {"check": "Is F(s) = F₁(s)·F₂(s)?", "yes": "Convolution: f₁(t) * f₂(t)", "no": "Try series expansion or contour integration"}
         ]
     },
     "numerical_integration": {
@@ -2616,35 +2349,8 @@ METHOD_SELECTOR = {
     }
 }
 
-@eng_bp.route("/eng/methodselector", methods=["POST"])
-def method_selector():
-    """Return decision tree for method selection"""
-    try:
-        data, err, code = validate_json("category")
-        if err:
-            return err, code
-        category = data.get("category", "")
-        selector = METHOD_SELECTOR.get(category)
-        if not selector:
-            return jsonify({
-                "error": f"Category '{category}' not found",
-                "available": list(METHOD_SELECTOR.keys())
-            }), 404
-        return jsonify(selector)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@eng_bp.route("/eng/methodselector/all")
-def all_method_selectors():
-    """Return all available method selectors"""
-    return jsonify({
-        "selectors": {k: v["label"] for k, v in METHOD_SELECTOR.items()}
-    })
-
-
 # ══════════════════════════════════════════════════════════════
-#  NEW ROUTES — Quick Formula Lookup (no AI call)
-#  Instant formula retrieval — no API cost
+#  QUICK FORMULAS (no AI call)
 # ══════════════════════════════════════════════════════════════
 QUICK_FORMULAS = {
     "derivatives": {
@@ -2770,65 +2476,162 @@ QUICK_FORMULAS = {
     }
 }
 
-@eng_bp.route("/eng/formulas", methods=["POST"])
-def quick_formulas():
-    """Get instant formula lookup — zero API cost"""
+# ══════════════════════════════════════════════════════════════
+#  TOPIC DIFFICULTY RATINGS (no AI call)
+# ══════════════════════════════════════════════════════════════
+TOPIC_DIFFICULTY = {
+    "diff_calc":        {"difficulty": 6, "exam_weight": "15-20%", "tip": "Focus on MVT and Taylor series — appear every year"},
+    "partial_diff":     {"difficulty": 7, "exam_weight": "15-20%", "tip": "Euler theorem and Lagrange multipliers are guaranteed questions"},
+    "integral_calc":    {"difficulty": 7, "exam_weight": "20-25%", "tip": "Beta-Gamma and change of order — practice at least 5 problems each"},
+    "infinite_series":  {"difficulty": 5, "exam_weight": "10-15%", "tip": "Master ratio test and root test — they solve 80% of problems"},
+    "linear_algebra":   {"difficulty": 6, "exam_weight": "25-30%", "tip": "Eigenvalues and Cayley-Hamilton — never skip these"},
+    "ode_first":        {"difficulty": 5, "exam_weight": "15-20%", "tip": "Identify the type first — then the method is automatic"},
+    "ode_higher":       {"difficulty": 7, "exam_weight": "20-25%", "tip": "CF + PI method — practice all PI cases especially failure case"},
+    "laplace":          {"difficulty": 6, "exam_weight": "20-25%", "tip": "Memorize the table — 50% of marks come from standard transforms"},
+    "vector_calc":      {"difficulty": 8, "exam_weight": "25-30%", "tip": "Green, Stokes, Gauss — one will definitely be asked"},
+    "complex_analysis": {"difficulty": 8, "exam_weight": "25-30%", "tip": "Residue theorem is the king — master it"},
+    "fourier_series":   {"difficulty": 6, "exam_weight": "15-20%", "tip": "Even/odd check saves half the calculation — always do it first"},
+    "probability":      {"difficulty": 5, "exam_weight": "25-30%", "tip": "Normal distribution + Bayes theorem — most asked"},
+    "numerical":        {"difficulty": 4, "exam_weight": "20-25%", "tip": "Formula-based — easiest marks if you memorize the formulas"},
+    "transforms":       {"difficulty": 7, "exam_weight": "20-25%", "tip": "Z-transform ROC is where students lose marks — always state it"}
+}
+
+
+# ══════════════════════════════════════════════════════════════
+#  API HELPERS — with caching, validation, error handling
+# ══════════════════════════════════════════════════════════════
+def call_groq(prompt, system=""):
+    if not groq_client:
+        raise RuntimeError("AI service temporarily unavailable")
     try:
-        data, err, code = validate_json("category")
-        if err:
-            return err, code
-        category = data.get("category", "")
-        formulas = QUICK_FORMULAS.get(category)
-        if not formulas:
-            return jsonify({
-                "error":     f"Category '{category}' not found",
-                "available": {k: v["label"] for k, v in QUICK_FORMULAS.items()}
-            }), 404
-        return jsonify(formulas)
+        truncated_system = system[:4000] if len(system) > 4000 else system
+        resp = groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": truncated_system},
+                {"role": "user",   "content": prompt}
+            ],
+            max_tokens=GROQ_MAX_TOKENS,
+            temperature=0.1
+        )
+        return resp.choices[0].message.content
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        error_msg = str(e).lower()
+        if "api key" in error_msg or "auth" in error_msg:
+            raise RuntimeError("Authentication error with AI provider")
+        elif "rate limit" in error_msg or "429" in error_msg:
+            raise RuntimeError("AI provider rate limit reached — please wait a moment")
+        elif "timeout" in error_msg:
+            raise RuntimeError("AI provider timeout — please try again")
+        else:
+            logger.warning("Groq error: %s", e)
+            raise RuntimeError("AI provider temporarily unavailable")
 
-@eng_bp.route("/eng/formulas/all")
-def all_formula_categories():
-    """List all available formula categories"""
-    return jsonify({
-        "categories": {k: {"label": v["label"], "count": len(v["formulas"])} for k, v in QUICK_FORMULAS.items()}
-    })
+def call_gemini(prompt, model_name):
+    if not gemini_client:
+        raise RuntimeError("AI service temporarily unavailable")
+    try:
+        if len(prompt) > 30000:
+            logger.warning("Truncating prompt from %d to 30000 chars", len(prompt))
+            prompt = prompt[:30000]
+        resp = gemini_client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config={"temperature": 0.1}
+        )
+        if not resp.text:
+            raise RuntimeError(f"{model_name} returned empty response")
+        return resp.text
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "api key" in error_msg or "auth" in error_msg:
+            raise RuntimeError("Authentication error with AI provider")
+        elif "rate limit" in error_msg or "429" in error_msg:
+            raise RuntimeError("AI provider rate limit reached — please wait a moment")
+        else:
+            logger.warning("Gemini %s error: %s", model_name, e)
+            raise RuntimeError("AI provider temporarily unavailable")
 
-@eng_bp.route("/eng/formulas/search")
-def search_formulas():
-    """Search across all formula categories"""
-    query = request.args.get("q", "").lower().strip()
-    if not query or len(query) < 2:
-        return jsonify({"error": "Search query must be at least 2 characters", "results": []}), 400
+def get_eng_response(full_prompt, prefer_provider=None):
+    """Get AI response with caching, validation, and smart provider routing"""
+    # Check cache first
+    cached_resp, cached_source = get_cached(full_prompt)
+    if cached_resp:
+        return cached_resp, cached_source
 
-    results = []
-    for category, data in QUICK_FORMULAS.items():
-        for formula in data["formulas"]:
-            if (query in formula["name"].lower() or
-                query in formula["formula"].lower() or
-                query in formula.get("condition", "").lower()):
-                results.append({
-                    "category":  category,
-                    "category_label": data["label"],
-                    "name":      formula["name"],
-                    "formula":   formula["formula"],
-                    "condition": formula.get("condition", "")
-                })
+    system_msg = ENG_CONTEXT + "\n" + ENG_FORMAT
+    start_time = time.time()
+    timeout = 30
+    prompt_length = len(full_prompt)
 
-    return jsonify({
-        "query":   query,
-        "count":   len(results),
-        "results": results
-    })
+    # Smart routing: long prompts go to Gemini (higher token limit on free tier)
+    if prefer_provider == "gemini" or prompt_length > 15000:
+        provider_order = [
+            ("gemini", GEMINI_CASCADE),
+            ("groq", [(GROQ_MODEL, "Groq")])
+        ]
+    else:
+        provider_order = [
+            ("groq", [(GROQ_MODEL, "Groq")]),
+            ("gemini", GEMINI_CASCADE)
+        ]
+
+    for provider_type, models in provider_order:
+        for model_info in models:
+            if time.time() - start_time > timeout:
+                break
+            try:
+                if provider_type == "groq":
+                    response = call_groq(full_prompt, system=system_msg)
+                    label = "Groq"
+                else:
+                    model_name, label = model_info
+                    response = call_gemini(full_prompt, model_name)
+
+                if is_valid_response(response):
+                    set_cache(full_prompt, response, label)
+                    return response, label
+                else:
+                    logger.warning("%s returned invalid response, trying next", label)
+            except Exception as e:
+                logger.warning("%s failed: %s", provider_type, e)
+                time.sleep(0.2)
+
+    return "All AI services are temporarily busy. Please try again in a moment. This service is 100% free — thank you for your patience.", "None"
 
 
 # ══════════════════════════════════════════════════════════════
-#  HEALTH CHECK AND STATS
+#  STANDARDIZED RESPONSE WRAPPER
 # ══════════════════════════════════════════════════════════════
+def make_response(response, source, topic_key="", **extra):
+    result = {
+        "response":  response,
+        "source":    source,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "cached":    "(cached)" in source if isinstance(source, str) else False,
+    }
+    if topic_key:
+        result["references"] = REFERENCES.get(topic_key, [])
+    result.update(extra)
+    return jsonify(result)
+
+
+# ══════════════════════════════════════════════════════════════
+#
+#                    R O U T E S
+#
+# ══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────
+#  ZERO COST ROUTES (No AI Call)
+# ─────────────────────────────────────────────
+
+@eng_bp.route("/eng/syllabus")
+def get_syllabus():
+    return jsonify(SYLLABUS)
+
 @eng_bp.route("/eng/health")
 def health():
-    """Health check and application stats"""
     total_subtopics = 0
     total_topics = 0
     for sem_data in SYLLABUS.values():
@@ -2836,33 +2639,29 @@ def health():
             total_topics += 1
             total_subtopics += len(topic_data["subtopics"])
 
-    total_misconceptions = sum(len(v) for v in MISCONCEPTIONS.values())
-    total_formulas = sum(len(v["formulas"]) for v in QUICK_FORMULAS.values())
-    total_method_selectors = sum(len(v["decision_tree"]) for v in METHOD_SELECTOR.values())
-
     return jsonify({
         "status":  "healthy",
         "app":     "MathSphere Engineering by Anupam Nigam",
-        "version": "2.0",
+        "version": "2.1",
+        "cost":    "100% FREE — zero rupees",
         "stats": {
-            "semesters":         len(SYLLABUS),
-            "topics":            total_topics,
-            "subtopics":         total_subtopics,
-            "prerequisites":     len(PREREQUISITES),
-            "misconceptions":    total_misconceptions,
-            "quick_formulas":    total_formulas,
-            "method_selectors":  total_method_selectors,
+            "semesters":           len(SYLLABUS),
+            "topics":              total_topics,
+            "subtopics":           total_subtopics,
+            "prerequisites":       len(PREREQUISITES),
+            "misconceptions":      sum(len(v) for v in MISCONCEPTIONS.values()),
+            "quick_formulas":      sum(len(v["formulas"]) for v in QUICK_FORMULAS.values()),
+            "method_selectors":    sum(len(v["decision_tree"]) for v in METHOD_SELECTOR.values()),
             "subject_connections": sum(len(v["connections"]) for v in SUBJECT_CONNECTIONS.values()),
-            "references":        sum(len(v) for v in REFERENCES.values()),
-            "cached_responses":  len(_response_cache),
-            "active_students":   len(_student_progress)
+            "cached_responses":    len(_response_cache),
+            "active_students":     len(_student_progress)
         },
-        "providers": {
-            "groq":   "configured" if GROQ_API_KEY else "missing",
-            "gemini": "configured" if GEMINI_API_KEY else "missing"
+        "free_providers": {
+            "groq":   {"status": "configured" if GROQ_API_KEY else "missing", "tier": "FREE", "limit": "30 req/min"},
+            "gemini": {"status": "configured" if GEMINI_API_KEY else "missing", "tier": "FREE", "limit": "15 req/min"}
         },
         "routes": {
-            "no_ai_cost": [
+            "zero_cost": [
                 "GET  /eng/syllabus",
                 "GET  /eng/health",
                 "GET  /eng/formulas/all",
@@ -2873,7 +2672,16 @@ def health():
                 "POST /eng/roadmap",
                 "GET  /eng/progress",
                 "POST /eng/progress/update",
-                "POST /eng/misconceptions"
+                "POST /eng/misconceptions",
+                "POST /eng/selftest",
+                "POST /eng/selftest/answer",
+                "POST /eng/examplan",
+                "POST /eng/difficulty",
+                "POST /eng/prerequisites",
+                "GET  /eng/export/syllabus",
+                "POST /eng/export/formulas",
+                "POST /eng/export/misconceptions",
+                "POST /eng/export/methods"
             ],
             "ai_powered": [
                 "POST /eng/learn",
@@ -2891,3 +2699,734 @@ def health():
             ]
         }
     })
+
+@eng_bp.route("/eng/formulas/all")
+def all_formula_categories():
+    return jsonify({
+        "categories": {k: {"label": v["label"], "count": len(v["formulas"])} for k, v in QUICK_FORMULAS.items()}
+    })
+
+@eng_bp.route("/eng/formulas/search")
+def search_formulas():
+    query = request.args.get("q", "").lower().strip()
+    if not query or len(query) < 2:
+        return jsonify({"error": "Search query must be at least 2 characters", "results": []}), 400
+    results = []
+    for category, data in QUICK_FORMULAS.items():
+        for formula in data["formulas"]:
+            if (query in formula["name"].lower() or
+                query in formula["formula"].lower() or
+                query in formula.get("condition", "").lower()):
+                results.append({
+                    "category":       category,
+                    "category_label": data["label"],
+                    "name":           formula["name"],
+                    "formula":        formula["formula"],
+                    "condition":      formula.get("condition", "")
+                })
+    return jsonify({"query": query, "count": len(results), "results": results})
+
+@eng_bp.route("/eng/formulas", methods=["POST"])
+def quick_formulas():
+    try:
+        data, err, code = validate_json("category")
+        if err:
+            return err, code
+        category = data.get("category", "")
+        formulas = QUICK_FORMULAS.get(category)
+        if not formulas:
+            return jsonify({
+                "error":     f"Category '{category}' not found",
+                "available": {k: v["label"] for k, v in QUICK_FORMULAS.items()}
+            }), 404
+        return jsonify(formulas)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/methodselector/all")
+def all_method_selectors():
+    return jsonify({"selectors": {k: v["label"] for k, v in METHOD_SELECTOR.items()}})
+
+@eng_bp.route("/eng/methodselector", methods=["POST"])
+def method_selector():
+    try:
+        data, err, code = validate_json("category")
+        if err:
+            return err, code
+        category = data.get("category", "")
+        selector = METHOD_SELECTOR.get(category)
+        if not selector:
+            return jsonify({
+                "error":     f"Category '{category}' not found",
+                "available": list(METHOD_SELECTOR.keys())
+            }), 404
+        return jsonify(selector)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/roadmap", methods=["POST"])
+def roadmap():
+    try:
+        data, err, code = validate_json("topic")
+        if err:
+            return err, code
+        topic_key = data.get("topic", "")
+        roadmap_data = build_roadmap(topic_key)
+        if not roadmap_data:
+            return jsonify({"error": f"Topic '{topic_key}' not found"}), 404
+        return jsonify(roadmap_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/progress", methods=["GET"])
+def get_student_progress():
+    try:
+        student_id = request.args.get("student_id", "anonymous")
+        progress = get_progress(student_id)
+        total_subtopics = 0
+        for sem_data in SYLLABUS.values():
+            for topic_data in sem_data["topics"].values():
+                total_subtopics += len(topic_data["subtopics"])
+        completed = len(progress["completed_subtopics"])
+        percentage = round((completed / total_subtopics) * 100, 1) if total_subtopics > 0 else 0
+        return jsonify({
+            "progress":              progress,
+            "total_subtopics":       total_subtopics,
+            "completed_count":       completed,
+            "completion_percentage": percentage
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/progress/update", methods=["POST"])
+def update_student_progress():
+    try:
+        data, err, code = validate_json("action")
+        if err:
+            return err, code
+        student_id = data.get("student_id", "anonymous")
+        action = data.get("action", "")
+        valid_actions = ["complete_subtopic", "mark_weak", "mark_strong", "misconception_found", "mock_test", "study_time"]
+        if action not in valid_actions:
+            return jsonify({"error": f"Invalid action. Valid: {', '.join(valid_actions)}"}), 400
+        progress = update_progress(student_id, action, data)
+        return jsonify({"progress": progress, "message": f"Progress updated: {action}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/misconceptions", methods=["POST"])
+def get_misconceptions():
+    try:
+        data, err, code = validate_json("topic")
+        if err:
+            return err, code
+        topic = data.get("topic", "")
+        topic_misconceptions = MISCONCEPTIONS.get(topic, [])
+        questions = [{
+            "id":            m["id"],
+            "question":      m["question"],
+            "danger":        m["danger"],
+            "misconception": m["misconception"]
+        } for m in topic_misconceptions]
+        return jsonify({"questions": questions, "topic": topic})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/prerequisites", methods=["POST"])
+def prerequisites():
+    try:
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        subtopic = data.get("subtopic", "")
+        prereqs = {}
+        if subtopic in PREREQUISITES:
+            prereqs[subtopic] = PREREQUISITES[subtopic]
+        for key, val in PREREQUISITES.items():
+            if key.lower() in subtopic.lower() or subtopic.lower() in key.lower():
+                prereqs[key] = val
+        return jsonify({"subtopic": subtopic, "prerequisites": prereqs})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/difficulty", methods=["POST"])
+def topic_difficulty():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        topics = data.get("topics", list(TOPIC_DIFFICULTY.keys()))
+        result = {}
+        for topic in topics:
+            if topic in TOPIC_DIFFICULTY:
+                info = TOPIC_DIFFICULTY[topic]
+                label = topic
+                for sem_data in SYLLABUS.values():
+                    if topic in sem_data["topics"]:
+                        label = sem_data["topics"][topic]["label"]
+                        break
+                result[topic] = {
+                    "label":            label,
+                    "difficulty":       info["difficulty"],
+                    "difficulty_label": "Easy" if info["difficulty"] <= 4 else "Medium" if info["difficulty"] <= 6 else "Hard" if info["difficulty"] <= 8 else "Very Hard",
+                    "exam_weight":      info["exam_weight"],
+                    "tip":              info["tip"],
+                    "misconceptions":   len(MISCONCEPTIONS.get(topic, [])),
+                    "formulas":         len(QUICK_FORMULAS.get(topic, {}).get("formulas", []))
+                }
+        return jsonify({"difficulty_scale": "1 (easiest) to 10 (hardest)", "topics": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/selftest", methods=["POST"])
+def self_test():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        topics = data.get("topics", list(MISCONCEPTIONS.keys()))
+        num_questions = min(int(data.get("num_questions", 10)), 20)
+
+        all_questions = []
+        for topic in topics:
+            if topic in MISCONCEPTIONS:
+                for m in MISCONCEPTIONS[topic]:
+                    all_questions.append({
+                        "id":            m["id"],
+                        "topic":         topic,
+                        "question":      m["question"],
+                        "danger":        m["danger"],
+                        "misconception": m["misconception"]
+                    })
+
+        danger_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2}
+        all_questions.sort(key=lambda q: danger_order.get(q["danger"], 3))
+        selected = all_questions[:num_questions]
+
+        return jsonify({
+            "test_name":     "MathSphere Quick Self-Assessment",
+            "num_questions": len(selected),
+            "instructions":  "Answer each question IN YOUR OWN WORDS before looking at the answer. Be honest — this is for YOUR learning.",
+            "questions":     selected,
+            "tip":           "After answering, use /eng/diagnose to check your understanding with AI analysis."
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/selftest/answer", methods=["POST"])
+def self_test_answer():
+    try:
+        data, err, code = validate_json("question_id")
+        if err:
+            return err, code
+        question_id = data.get("question_id", "")
+        for topic, misconceptions in MISCONCEPTIONS.items():
+            for m in misconceptions:
+                if m["id"] == question_id:
+                    return jsonify({
+                        "id":                      m["id"],
+                        "question":                m["question"],
+                        "correct_understanding":   m["correct"],
+                        "common_misconception":    m["misconception"],
+                        "why_students_believe_it": m["why_students_believe_it"],
+                        "danger_level":            m["danger"],
+                        "topic":                   topic,
+                        "tip": "If you got this wrong, don't worry! Now you know the truth — use it in your exam."
+                    })
+        return jsonify({"error": "Question not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/examplan", methods=["POST"])
+def exam_plan():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        hours_available = int(data.get("hours", 24))
+        topics_to_cover = data.get("topics", [])
+
+        all_topic_keys = []
+        for sem_data in SYLLABUS.values():
+            all_topic_keys.extend(sem_data["topics"].keys())
+
+        if not topics_to_cover:
+            return jsonify({
+                "error":     "Provide list of topic keys in 'topics' field",
+                "available": all_topic_keys
+            }), 400
+
+        plan = {
+            "title":           f"Study Plan — {hours_available} Hours Remaining",
+            "total_hours":     hours_available,
+            "strategy":        [],
+            "phase1_formulas": [],
+            "phase2_practice": [],
+            "phase3_revision": []
+        }
+
+        formula_hours  = round(hours_available * 0.3, 1)
+        practice_hours = round(hours_available * 0.5, 1)
+        revision_hours = round(hours_available * 0.2, 1)
+        hours_per_topic = round(hours_available / len(topics_to_cover), 1) if topics_to_cover else 0
+
+        for topic_key in topics_to_cover:
+            topic_label = topic_key
+            subtopic_list = []
+            for sem_data in SYLLABUS.values():
+                if topic_key in sem_data["topics"]:
+                    td = sem_data["topics"][topic_key]
+                    topic_label = td["label"]
+                    subtopic_list = td["subtopics"]
+                    break
+
+            total_subtopics = len(subtopic_list)
+            must_do = subtopic_list[:total_subtopics // 2]
+            good_to_do = subtopic_list[total_subtopics // 2:]
+
+            plan["strategy"].append({
+                "topic":               topic_label,
+                "hours_allocated":     hours_per_topic,
+                "must_do_subtopics":   must_do[:8],
+                "if_time_permits":     good_to_do[:5],
+                "misconception_count": len(MISCONCEPTIONS.get(topic_key, []))
+            })
+
+            if topic_key in QUICK_FORMULAS:
+                plan["phase1_formulas"].append({
+                    "topic":         topic_label,
+                    "formula_count": len(QUICK_FORMULAS[topic_key]["formulas"]),
+                    "endpoint":      f"/eng/formulas with category={topic_key}"
+                })
+
+        plan["timeline"] = [
+            {"phase": "Phase 1: Formulas",  "hours": formula_hours,  "what": "Memorize key formulas using /eng/formulas"},
+            {"phase": "Phase 2: Practice",  "hours": practice_hours, "what": "Solve problems using /eng/learn (examples section)"},
+            {"phase": "Phase 3: Revision",  "hours": revision_hours, "what": "Quick revision + self-test using /eng/selftest"},
+            {"phase": "Last 30 Minutes",    "hours": 0.5,           "what": "Review misconceptions using /eng/misconceptions"}
+        ]
+
+        plan["motivation"] = f"You have {hours_available} hours. That is enough. Focus on {len(topics_to_cover)} topics. Do formulas first, then practice, then revise. You've got this."
+
+        return jsonify(plan)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────
+#  EXPORT ROUTES (No AI Call — Offline Study)
+# ─────────────────────────────────────────────
+
+@eng_bp.route("/eng/export/syllabus")
+def export_syllabus():
+    return jsonify({
+        "title":         "MathSphere — Complete Engineering Math Syllabus",
+        "author":        "MathSphere Engineering by Anupam Nigam",
+        "generated":     time.strftime("%Y-%m-%d %H:%M:%S"),
+        "syllabus":      SYLLABUS,
+        "prerequisites": PREREQUISITES,
+        "references":    REFERENCES
+    })
+
+@eng_bp.route("/eng/export/formulas", methods=["POST"])
+def export_formulas():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        categories = data.get("categories", list(QUICK_FORMULAS.keys()))
+        export = {
+            "title":     "MathSphere Engineering — Formula Booklet",
+            "author":    "MathSphere Engineering by Anupam Nigam",
+            "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "sections":  {}
+        }
+        for cat in categories:
+            if cat in QUICK_FORMULAS:
+                export["sections"][cat] = QUICK_FORMULAS[cat]
+        return jsonify(export)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/export/misconceptions", methods=["POST"])
+def export_misconceptions():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        topics = data.get("topics", list(MISCONCEPTIONS.keys()))
+        export = {
+            "title":     "MathSphere — Common Misconceptions Guide",
+            "author":    "MathSphere Engineering by Anupam Nigam",
+            "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "purpose":   "Read before exam to avoid common mistakes",
+            "topics":    {}
+        }
+        for topic in topics:
+            if topic in MISCONCEPTIONS:
+                export["topics"][topic] = MISCONCEPTIONS[topic]
+        return jsonify(export)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@eng_bp.route("/eng/export/methods", methods=["POST"])
+def export_methods():
+    return jsonify({
+        "title":     "MathSphere — Method Selection Guide",
+        "author":    "MathSphere Engineering by Anupam Nigam",
+        "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "selectors": METHOD_SELECTOR
+    })
+
+
+# ─────────────────────────────────────────────
+#  AI-POWERED ROUTES (Free Groq + Gemini)
+# ─────────────────────────────────────────────
+
+@eng_bp.route("/eng/learn", methods=["POST"])
+def learn():
+    try:
+        if not check_rate_limit(6):
+            return rate_limit_response()
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        topic    = sanitize_input(data.get("topic", ""))
+        subtopic = sanitize_input(data.get("subtopic", ""))
+        section  = data.get("section", "definition")
+        if section not in ("definition", "theorem", "examples", "practice", "intuition"):
+            return jsonify({"error": "Invalid section. Choose: definition, theorem, examples, practice, intuition"}), 400
+        prereqs  = PREREQUISITES.get(subtopic, [])
+        prompt   = build_learn_prompt(topic, subtopic, section)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source, topic_key=topic, prerequisites=prereqs, section=section)
+    except Exception as e:
+        logger.error("Learn error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/revision", methods=["POST"])
+def revision():
+    try:
+        if not check_rate_limit(6):
+            return rate_limit_response()
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        topic    = sanitize_input(data.get("topic", ""))
+        subtopic = sanitize_input(data.get("subtopic", ""))
+        prompt   = build_revision_prompt(topic, subtopic)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source, topic_key=topic)
+    except Exception as e:
+        logger.error("Revision error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/pyq", methods=["POST"])
+def pyq():
+    try:
+        if not check_rate_limit(4):
+            return rate_limit_response()
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        topic      = sanitize_input(data.get("topic", ""))
+        subtopic   = sanitize_input(data.get("subtopic", ""))
+        university = data.get("university", "all")
+        difficulty = data.get("difficulty", "medium")
+        prompt     = build_pyq_prompt(topic, subtopic, university, difficulty)
+        response, source = get_eng_response(prompt, prefer_provider="gemini")
+        return make_response(response, source, topic_key=topic)
+    except Exception as e:
+        logger.error("PYQ error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/mocktest", methods=["POST"])
+def mocktest():
+    try:
+        if not check_rate_limit(2):
+            return rate_limit_response()
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        topic      = sanitize_input(data.get("topic", ""))
+        subtopic   = sanitize_input(data.get("subtopic", ""))
+        num_q      = data.get("num_questions", "5")
+        marks_each = data.get("marks_each", "5")
+        prompt     = build_mocktest_prompt(topic, subtopic, num_q, marks_each)
+        response, source = get_eng_response(prompt, prefer_provider="gemini")
+
+        student_id = data.get("student_id", "anonymous")
+        update_progress(student_id, "mock_test", {})
+
+        return make_response(response, source)
+    except Exception as e:
+        logger.error("Mocktest error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/formulabooklet", methods=["POST"])
+def formula_booklet():
+    try:
+        if not check_rate_limit(4):
+            return rate_limit_response()
+        data, err, code = validate_json("subtopic")
+        if err:
+            return err, code
+        topic    = sanitize_input(data.get("topic", ""))
+        subtopic = sanitize_input(data.get("subtopic", ""))
+        prompt   = build_formula_booklet_prompt(topic, subtopic)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source, topic_key=topic)
+    except Exception as e:
+        logger.error("Formula booklet error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/connections", methods=["POST"])
+def connections():
+    try:
+        data, err, code = validate_json("topic")
+        if err:
+            return err, code
+        topic    = sanitize_input(data.get("topic", ""))
+        subtopic = sanitize_input(data.get("subtopic", ""))
+
+        topic_connections = SUBJECT_CONNECTIONS.get(topic)
+        if topic_connections:
+            return jsonify({
+                "connections": topic_connections["connections"],
+                "source":     "MathSphere Engineering",
+                "references": REFERENCES.get(topic, []),
+                "type":       "structured"
+            })
+
+        if not check_rate_limit(4):
+            return rate_limit_response()
+
+        prompt = ENG_CONTEXT + f"""
+For the engineering mathematics topic: {subtopic}
+Show exactly how this appears in different engineering subjects.
+
+For EACH engineering subject:
+
+SUBJECT NAME: [name]
+SEMESTER: [which semester]
+HOW IT IS USED:
+[2-3 sentences with specific mathematical connection]
+KEY FORMULA:
+
+
+$$
+[actual formula from this topic used in this subject]
+$$
+
+
+EXAMPLE:
+[One specific engineering problem using this]
+
+Cover at least 5 different engineering subjects. Be specific.
+"""
+        response, source = get_eng_response(prompt)
+        return jsonify({
+            "response":   response,
+            "source":     source,
+            "references": REFERENCES.get(topic, []),
+            "type":       "generated"
+        })
+    except Exception as e:
+        logger.error("Connections error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/ask", methods=["POST"])
+def ask_eng():
+    try:
+        if not check_rate_limit(6):
+            return rate_limit_response()
+        data, err, code = validate_json("question")
+        if err:
+            return err, code
+        question = sanitize_input(data.get("question", ""))
+        if len(question) < 3:
+            return jsonify({"error": "Question too short. Please ask a complete question."}), 400
+        prompt   = build_ask_prompt(question)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source)
+    except Exception as e:
+        logger.error("Ask error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/diagnose", methods=["POST"])
+def diagnose():
+    try:
+        if not check_rate_limit(4):
+            return rate_limit_response()
+        data, err, code = validate_json("topic", "question_id", "answer")
+        if err:
+            return err, code
+        topic          = sanitize_input(data.get("topic", ""))
+                question_id    = data.get("question_id", "")
+        student_answer = sanitize_input(data.get("answer", ""))
+
+        prompt = build_misconception_prompt(topic, student_answer, question_id)
+        if not prompt:
+            return jsonify({"error": "Question not found"}), 404
+
+        response, source = get_eng_response(prompt)
+
+        student_id = data.get("student_id", "anonymous")
+        update_progress(student_id, "misconception_found", {"misconception_id": question_id})
+
+        return make_response(response, source)
+    except Exception as e:
+        logger.error("Diagnose error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/solve", methods=["POST"])
+def solve():
+    try:
+        if not check_rate_limit(4):
+            return rate_limit_response()
+        data, err, code = validate_json("problem")
+        if err:
+            return err, code
+        problem   = sanitize_input(data.get("problem", ""), max_length=3000)
+        topic_key = sanitize_input(data.get("topic", ""))
+        if len(problem) < 5:
+            return jsonify({"error": "Problem statement too short. Please provide a complete problem."}), 400
+        prompt    = build_solve_prompt(problem, topic_key)
+        response, source = get_eng_response(prompt, prefer_provider="gemini")
+        return make_response(response, source, topic_key=topic_key)
+    except Exception as e:
+        logger.error("Solve error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/compare", methods=["POST"])
+def compare():
+    try:
+        if not check_rate_limit(4):
+            return rate_limit_response()
+        data, err, code = validate_json("method1", "method2")
+        if err:
+            return err, code
+        method1   = sanitize_input(data.get("method1", ""))
+        method2   = sanitize_input(data.get("method2", ""))
+        topic_key = sanitize_input(data.get("topic", ""))
+        prompt    = build_compare_prompt(method1, method2, topic_key)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source, topic_key=topic_key)
+    except Exception as e:
+        logger.error("Compare error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/examstrategy", methods=["POST"])
+def exam_strategy():
+    try:
+        if not check_rate_limit(3):
+            return rate_limit_response()
+        data, err, code = validate_json("topic")
+        if err:
+            return err, code
+        topic_key       = sanitize_input(data.get("topic", ""))
+        hours_available = data.get("hours", "8")
+        prompt = build_exam_strategy_prompt(topic_key, hours_available)
+        response, source = get_eng_response(prompt, prefer_provider="gemini")
+        return make_response(response, source)
+    except Exception as e:
+        logger.error("Exam strategy error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+@eng_bp.route("/eng/doubt", methods=["POST"])
+def doubt():
+    try:
+        if not check_rate_limit(6):
+            return rate_limit_response()
+        data, err, code = validate_json("doubt")
+        if err:
+            return err, code
+        doubt_text = sanitize_input(data.get("doubt", ""))
+        topic_key  = sanitize_input(data.get("topic", ""))
+        subtopic   = sanitize_input(data.get("subtopic", ""))
+        if len(doubt_text) < 5:
+            return jsonify({"error": "Please describe your doubt in more detail."}), 400
+        prompt     = build_doubt_prompt(doubt_text, topic_key, subtopic)
+        response, source = get_eng_response(prompt)
+        return make_response(response, source, topic_key=topic_key)
+    except Exception as e:
+        logger.error("Doubt error: %s", e)
+        return jsonify({"error": "Something went wrong. Please try again."}), 500
+
+
+# ─────────────────────────────────────────────
+#  ADMIN ROUTES
+# ─────────────────────────────────────────────
+
+@eng_bp.route("/eng/admin/cache/stats")
+def cache_stats():
+    with _cache_lock:
+        total_entries = len(_response_cache)
+        total_hits = sum(v.get("hits", 0) for v in _response_cache.values())
+        oldest = min((v.get("created_at", 0) for v in _response_cache.values()), default=0)
+        newest = max((v.get("created_at", 0) for v in _response_cache.values()), default=0)
+    return jsonify({
+        "total_entries":   total_entries,
+        "max_entries":     CACHE_MAX_SIZE,
+        "total_hits":      total_hits,
+        "ttl_seconds":     CACHE_TTL,
+        "oldest_entry":    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(oldest)) if oldest else "none",
+        "newest_entry":    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(newest)) if newest else "none",
+        "utilization":     f"{round(total_entries/CACHE_MAX_SIZE*100, 1)}%"
+    })
+
+@eng_bp.route("/eng/admin/cache/cleanup", methods=["POST"])
+def admin_cache_cleanup():
+    now = time.time()
+    removed = 0
+    with _cache_lock:
+        expired_keys = [k for k, v in _response_cache.items() if now - v.get("created_at", 0) > CACHE_TTL]
+        for k in expired_keys:
+            del _response_cache[k]
+            removed += 1
+    logger.info("Cache cleanup: removed %d expired entries", removed)
+    return jsonify({
+        "message":   f"Removed {removed} expired entries",
+        "remaining": len(_response_cache)
+    })
+
+@eng_bp.route("/eng/admin/rate/stats")
+def rate_stats():
+    with _rate_lock:
+        now = time.time()
+        active_ips = 0
+        total_requests = 0
+        for ip, timestamps in _rate_data.items():
+            recent = [t for t in timestamps if now - t < 60]
+            if recent:
+                active_ips += 1
+                total_requests += len(recent)
+    return jsonify({
+        "active_ips_last_minute":    active_ips,
+        "total_requests_last_minute": total_requests,
+        "tracked_ips":               len(_rate_data)
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+#  END OF FILE
+#  
+#  MathSphere Engineering v2.1
+#  By Anupam Nigam
+#  100% FREE — Zero Rupees
+#
+#  Total Routes: 32
+#    Zero Cost Routes: 20 (no AI calls)
+#    AI-Powered Routes: 12 (free Groq + Gemini)
+#
+#  Features:
+#    - 4 semesters, 14 topics, 250+ subtopics
+#    - 40+ misconception diagnostics
+#    - 100+ instant formulas
+#    - 5 method selector decision trees
+#    - 60+ subject connections
+#    - Thread-safe caching with TTL
+#    - Rate limiting to protect free API quota
+#    - Input sanitization against prompt injection
+#    - Smart provider routing (Groq for short, Gemini for long)
+#    - Student progress tracking
+#    - Offline export for students with limited internet
+#    - Self-test without AI
+#    - Exam planning without AI
+#    - Topic difficulty ratings
+#
+#  Free Providers Used:
+#    - Groq (Llama 3.3 70B) — 30 req/min free
+#    - Google Gemini (2.5 Flash, 2.0 Flash) — 15 req/min free
+#
+# ══════════════════════════════════════════════════════════════
