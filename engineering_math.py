@@ -3252,7 +3252,7 @@ def diagnose():
         if err:
             return err, code
         topic          = sanitize_input(data.get("topic", ""))
-                question_id    = data.get("question_id", "")
+        question_id    = data.get("question_id", "")
         student_answer = sanitize_input(data.get("answer", ""))
 
         prompt = build_misconception_prompt(topic, student_answer, question_id)
