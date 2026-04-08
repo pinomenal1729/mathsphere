@@ -1,6 +1,8 @@
 // ══════════════════════════════════════════════════════════════
 //  MATHSPHERE ENGINEERING — engineering.js
 //  Mode switcher + full engineering interface
+//  Next-Level version with particle backgrounds,
+//  aurora effects, holographic cards, mouse tracking
 // ══════════════════════════════════════════════════════════════
 (function() {
 'use strict';
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     injectLanding();
     injectEngApp();
     loadSyllabus();
+    setupMouseTracking();
     var saved = localStorage.getItem('msMode');
     if (saved === 'engineering') activateEngineering();
     else if (saved === 'general') activateGeneral();
@@ -27,16 +30,49 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ══════════════════════════════════════════════════════════════
-//  LANDING OVERLAY
+//  MOUSE TRACKING — for holographic card effects
+// ══════════════════════════════════════════════════════════════
+function setupMouseTracking() {
+    document.addEventListener('mousemove', function(e) {
+        var cards = document.querySelectorAll('.landing-card');
+        cards.forEach(function(card) {
+            var rect = card.getBoundingClientRect();
+            var x = ((e.clientX - rect.left) / rect.width) * 100;
+            var y = ((e.clientY - rect.top) / rect.height) * 100;
+            card.style.setProperty('--mouse-x', x + '%');
+            card.style.setProperty('--mouse-y', y + '%');
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  LANDING OVERLAY — with particles, orbs, aurora
 // ══════════════════════════════════════════════════════════════
 function injectLanding() {
     var el = document.createElement('div');
     el.id = 'mode-landing';
     el.className = 'hidden';
+
+    // Build particle elements (15 particles)
+    var particleHTML = '<div class="landing-particles">';
+    for (var i = 1; i <= 15; i++) {
+        particleHTML += '<div class="p"></div>';
+    }
+    particleHTML += '</div>';
+
     el.innerHTML = [
+        // Aurora layer
+        '<div class="landing-aurora"></div>',
+        // Floating orbs
+        '<div class="landing-orb landing-orb--1"></div>',
+        '<div class="landing-orb landing-orb--2"></div>',
+        '<div class="landing-orb landing-orb--3"></div>',
+        // Particles
+        particleHTML,
+        // Content
         '<div class="landing-eyebrow">MathSphere Platform</div>',
         '<div class="landing-title-main">Mathematics for <span>Engineers</span></div>',
-        '<div class="landing-sub">Choose your learning environment. Switch anytime from the header.</div>',
+        '<div class="landing-sub">Choose your learning environment. Switch anytime from the header. Built for IIT/NIT students who take their exams seriously.</div>',
         '<div class="landing-cards">',
         '  <div class="landing-card landing-card--general" onclick="window.engModule.chooseMode(\'general\')">',
         '    <div class="landing-card-tag">All Levels</div>',
@@ -59,12 +95,19 @@ function injectLanding() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  ENGINEERING APP
+//  ENGINEERING APP — with animated background orbs
 // ══════════════════════════════════════════════════════════════
 function injectEngApp() {
     var el = document.createElement('div');
     el.id = 'eng-app';
     el.innerHTML = [
+        // Animated background
+        '<div class="eng-app-bg">',
+        '  <div class="orb orb--1"></div>',
+        '  <div class="orb orb--2"></div>',
+        '  <div class="orb orb--3"></div>',
+        '</div>',
+
         // Header
         '<div class="eng-header">',
         '  <button class="eng-hamburger" id="eng-hamburger" onclick="window.engModule.toggleSidebar()" aria-label="Menu">',
@@ -78,14 +121,14 @@ function injectEngApp() {
         '    </div>',
         '  </div>',
         '  <div class="eng-tabs">',
-        '    <button class="eng-tab active" data-tab="learn"       onclick="window.engModule.switchTab(\'learn\',this)">Learn</button>',
-        '    <button class="eng-tab"        data-tab="revision"    onclick="window.engModule.switchTab(\'revision\',this)">Quick Revision</button>',
-        '    <button class="eng-tab"        data-tab="formulabook" onclick="window.engModule.switchTab(\'formulabook\',this)">Formula Booklet</button>',
-        '    <button class="eng-tab"        data-tab="connections" onclick="window.engModule.switchTab(\'connections\',this)">Subject Connections</button>',
-        '    <button class="eng-tab"        data-tab="pyq"         onclick="window.engModule.switchTab(\'pyq\',this)">PYQ Bank</button>',
-        '    <button class="eng-tab"        data-tab="mocktest"    onclick="window.engModule.switchTab(\'mocktest\',this)">Mock Test</button>',
+        '    <button class="eng-tab active" data-tab="learn"         onclick="window.engModule.switchTab(\'learn\',this)">Learn</button>',
+        '    <button class="eng-tab"        data-tab="revision"      onclick="window.engModule.switchTab(\'revision\',this)">Quick Revision</button>',
+        '    <button class="eng-tab"        data-tab="formulabook"   onclick="window.engModule.switchTab(\'formulabook\',this)">Formula Booklet</button>',
+        '    <button class="eng-tab"        data-tab="connections"   onclick="window.engModule.switchTab(\'connections\',this)">Subject Connections</button>',
+        '    <button class="eng-tab"        data-tab="pyq"           onclick="window.engModule.switchTab(\'pyq\',this)">PYQ Bank</button>',
+        '    <button class="eng-tab"        data-tab="mocktest"      onclick="window.engModule.switchTab(\'mocktest\',this)">Mock Test</button>',
         '    <button class="eng-tab"        data-tab="misconception" onclick="window.engModule.switchTab(\'misconception\',this)">Misconception Detector</button>',
-        '    <button class="eng-tab"        data-tab="ask"         onclick="window.engModule.switchTab(\'ask\',this)">Ask AI</button>',
+        '    <button class="eng-tab"        data-tab="ask"           onclick="window.engModule.switchTab(\'ask\',this)">Ask AI</button>',
         '  </div>',
         '  <div class="eng-header-right">',
         '    <div class="eng-status">ONLINE</div>',
@@ -164,7 +207,7 @@ function injectEngApp() {
         '      <div class="eng-welcome" id="eng-welcome">',
         '        <div class="eng-welcome-symbol">&#x2207;</div>',
         '        <div class="eng-welcome-title">Engineering Mathematics</div>',
-        '        <div class="eng-welcome-sub">Select a semester, choose a topic, then pick a subtopic to begin. Seven tabs — Learn, Revision, Formula Booklet, Subject Connections, PYQ Bank, Mock Test, and Ask AI.</div>',
+        '        <div class="eng-welcome-sub">Select a semester, choose a topic, then pick a subtopic to begin. Seven powerful tabs — Learn, Revision, Formula Booklet, Subject Connections, PYQ Bank, Mock Test, Misconception Detector, and Ask AI.</div>',
         '      </div>',
         '    </div>',
 
@@ -173,7 +216,7 @@ function injectEngApp() {
         '      <div class="eng-input-box">',
         '        <textarea id="eng-ask-input" rows="1" placeholder="Ask any engineering mathematics question..." oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();window.engModule.askAI()}"></textarea>',
         '        <button class="eng-send" onclick="window.engModule.askAI()">',
-        '          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+        '          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
         '        </button>',
         '      </div>',
         '    </div>',
@@ -183,13 +226,16 @@ function injectEngApp() {
     ].join('');
     document.body.appendChild(el);
 
-    // Mobile overlay — tapping it closes the sidebar drawer
+    // Mobile overlay
     var overlay = document.createElement('div');
     overlay.id = 'eng-mobile-overlay';
     overlay.className = 'eng-mobile-overlay';
     overlay.addEventListener('click', function() { closeSidebar(); });
     document.body.appendChild(overlay);
 }
+
+// ══════════════════════════════════════════════════════════════
+//  SYLLABUS LOAD
 // ══════════════════════════════════════════════════════════════
 function loadSyllabus() {
     fetch('/eng/syllabus')
@@ -287,46 +333,43 @@ function switchTab(tab, btn) {
     }
 
     if (tab === 'ask') {
-        setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px">?</div><div class="eng-welcome-title">Ask Engineering AI</div><div class="eng-welcome-sub">Ask any B.Tech mathematics question. I know you are studying for semester exams and will answer at exactly that level.</div></div>');
+        setOutput(buildWelcomeHTML('?', 'Ask Engineering AI', 'Ask any B.Tech mathematics question. Context-aware answers tuned for semester exam preparation.'));
     }
 
     if (tab === 'misconception') {
-        if (state.activeTopic) {
-            fetchMisconceptions();
-        } else {
-            setOutput(buildMisconceptionWelcome());
-        }
+        if (state.activeTopic) fetchMisconceptions();
+        else setOutput(buildWelcomeHTML('&#x26A0;', 'Misconception Detector', 'Select a semester and topic from the left. Diagnostic questions will reveal hidden wrong beliefs that cost marks in university exams.'));
     }
 
     if (tab === 'connections' && !state.activeSubtopic) {
-        setOutput(buildConnectionsWelcome());
+        setOutput(buildWelcomeHTML('&#x2194;', 'Subject Connections Map', 'Discover exactly where your mathematics appears in Circuits, Mechanics, Control Systems, Signals, and more.'));
     }
 
     if (tab === 'formulabook' && !state.activeSubtopic) {
-        setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px;font-family:var(--font-mono)">F(x)</div><div class="eng-welcome-title">Formula Booklet</div><div class="eng-welcome-sub">Select a semester, topic, and subtopic to generate a complete formula reference with physical meanings, units, and examples.</div></div>');
+        setOutput(buildWelcomeHTML('&#x2131;', 'Formula Booklet', 'Select a semester, topic, and subtopic to generate a complete formula reference with physical meanings, units, and examples.'));
+    }
+
+    if (tab === 'learn' && !state.activeSubtopic && !state.activeTopic) {
+        setOutput(buildWelcomeHTML('&#x2207;', 'Engineering Mathematics', 'Select a semester, choose a topic, then pick a subtopic to begin learning.'));
     }
 }
 
-function buildConnectionsWelcome() {
+// ══════════════════════════════════════════════════════════════
+//  WELCOME HTML BUILDER — reusable
+// ══════════════════════════════════════════════════════════════
+function buildWelcomeHTML(symbol, title, sub) {
     return [
         '<div class="eng-welcome">',
-        '<div class="eng-welcome-symbol" style="font-size:36px">&#x2194;</div>',
-        '<div class="eng-welcome-title">Subject Connections Map</div>',
-        '<div class="eng-welcome-sub">Discover exactly where your mathematics appears in Circuits, Mechanics, Control Systems, Signals, and more. Select a topic to see its real engineering applications.</div>',
+        '  <div class="eng-welcome-symbol">' + symbol + '</div>',
+        '  <div class="eng-welcome-title">' + title + '</div>',
+        '  <div class="eng-welcome-sub">' + sub + '</div>',
         '</div>'
     ].join('');
 }
 
-function buildMisconceptionWelcome() {
-    return [
-        '<div class="eng-welcome">',
-        '<div class="eng-welcome-symbol" style="font-size:36px">&#x26A0;</div>',
-        '<div class="eng-welcome-title">Misconception Detector</div>',
-        '<div class="eng-welcome-sub">Select a semester and topic from the left. You will be asked diagnostic questions designed to reveal hidden wrong beliefs you may carry about that topic — beliefs that cost marks in university examinations.</div>',
-        '</div>'
-    ].join('');
-}
-
+// ══════════════════════════════════════════════════════════════
+//  MISCONCEPTION MODULE
+// ══════════════════════════════════════════════════════════════
 function fetchMisconceptions() {
     if (!state.activeTopic) return;
     showLoading('Loading diagnostic questions for ' + getTopicLabel(state.activeTopic) + '...');
@@ -334,35 +377,40 @@ function fetchMisconceptions() {
         if (data.questions && data.questions.length) {
             renderMisconceptionQuestions(data.questions);
         } else {
-            setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px">&#x26A0;</div><div class="eng-welcome-title">No questions yet</div><div class="eng-welcome-sub">Misconception questions for this topic are being developed. Try another topic.</div></div>');
+            setOutput(buildWelcomeHTML('&#x26A0;', 'No questions yet', 'Misconception questions for this topic are being developed. Try another topic.'));
         }
     });
 }
 
 function renderMisconceptionQuestions(questions) {
-    var dangerColors = { HIGH: '#ef4444', CRITICAL: '#dc2626', MEDIUM: '#f59e0b' };
+    var dangerColors = {
+        HIGH:     { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
+        CRITICAL: { color: '#dc2626', bg: 'rgba(220,38,38,0.10)', border: 'rgba(220,38,38,0.25)' },
+        MEDIUM:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' }
+    };
+
     var html = '<div style="padding:4px 0;">';
-    html += '<div style="margin-bottom:20px;">';
-    html += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#ef4444;margin-bottom:4px;">Misconception Detector</div>';
-    html += '<div style="font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;">' + getTopicLabel(state.activeTopic) + '</div>';
-    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:6px;line-height:1.6;">Answer each question in your own words. Do not look up the answer — your first instinct is what matters. The AI will analyse your thinking and identify any misconceptions you may be carrying.</div>';
+    // Header
+    html += '<div style="margin-bottom:24px;">';
+    html += '<div style="font-family:var(--e-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#ef4444;margin-bottom:6px;">&#x26A0; Misconception Detector</div>';
+    html += '<div style="font-size:20px;font-weight:800;color:var(--e-t1);letter-spacing:-.4px;">' + getTopicLabel(state.activeTopic) + '</div>';
+    html += '<div style="font-size:12.5px;color:var(--e-t3);margin-top:8px;line-height:1.7;">Answer each question honestly. Your first instinct matters. The AI will analyse your thinking and identify misconceptions.</div>';
     html += '</div>';
 
     questions.forEach(function(q, i) {
-        var color = dangerColors[q.danger] || '#f59e0b';
-        html += '<div style="margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);" id="mc-card-' + q.id + '">';
-        // Header
-        html += '<div style="background:' + color + '14;border-left:3px solid ' + color + ';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">';
-        html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">Question ' + (i+1) + '</div>';
-        html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:9999px;background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44;">' + q.danger + ' risk</div>';
+        var d = dangerColors[q.danger] || dangerColors.MEDIUM;
+        html += '<div class="eng-card" style="animation-delay:' + (i * 0.08) + 's" id="mc-card-' + q.id + '">';
+        // Card header
+        html += '<div class="eng-card-header" style="background:' + d.bg + ';border-left:3px solid ' + d.color + ';">';
+        html += '<div style="flex:1;font-size:13px;font-weight:700;color:var(--e-t1);">Question ' + (i+1) + '</div>';
+        html += '<div class="eng-card-tag" style="background:' + d.bg + ';color:' + d.color + ';border:1px solid ' + d.border + ';">' + q.danger + ' risk</div>';
         html += '</div>';
-        // Question text
-        html += '<div style="background:var(--bg-surface);padding:14px 16px;">';
-        html += '<div style="font-size:13.5px;color:var(--text-primary);line-height:1.75;margin-bottom:12px;">' + q.question + '</div>';
-        // Answer textarea
-        html += '<textarea id="mc-answer-' + q.id + '" placeholder="Write your answer here — in your own words, no formulas needed..." style="width:100%;min-height:80px;background:var(--bg-raised);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:13px;font-family:var(--font-sans);resize:vertical;outline:none;line-height:1.6;"></textarea>';
-        html += '<button onclick="window.engModule.submitMisconception(\'' + q.id + '\')" style="margin-top:10px;padding:8px 20px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;font-size:12px;font-weight:700;font-family:var(--font-sans);cursor:pointer;">Diagnose My Thinking</button>';
-        html += '<div id="mc-result-' + q.id + '" style="margin-top:12px;"></div>';
+        // Card body
+        html += '<div class="eng-card-body">';
+        html += '<div style="font-size:13.5px;color:var(--e-t1);line-height:1.8;margin-bottom:14px;">' + q.question + '</div>';
+        html += '<textarea id="mc-answer-' + q.id + '" placeholder="Write your answer here — in your own words..." style="width:100%;min-height:88px;background:var(--e-bg3);border:1px solid var(--e-border2);border-radius:10px;padding:12px 14px;color:var(--e-t1);font-size:13px;font-family:var(--e-sans);resize:vertical;outline:none;line-height:1.65;transition:border-color 200ms;"></textarea>';
+        html += '<button onclick="window.engModule.submitMisconception(\'' + q.id + '\')" style="margin-top:12px;padding:8px 20px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;font-size:12px;font-weight:700;font-family:var(--e-sans);cursor:pointer;transition:all 200ms;">Diagnose My Thinking</button>';
+        html += '<div id="mc-result-' + q.id + '" style="margin-top:14px;"></div>';
         html += '</div>';
         html += '</div>';
     });
@@ -382,7 +430,7 @@ function submitMisconception(questionId) {
     }
     var resultDiv = document.getElementById('mc-result-' + questionId);
     if (resultDiv) {
-        resultDiv.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary);font-size:12px;font-family:var(--font-mono);padding:8px 0;"><div class="eng-spinner"></div>Analysing your thinking...</div>';
+        resultDiv.innerHTML = '<div style="display:flex;align-items:center;gap:12px;color:var(--e-t3);font-size:12px;font-family:var(--e-mono);padding:10px 0;"><div class="eng-spinner"></div>Analysing your thinking...</div>';
     }
     postToAPI('/eng/diagnose', {
         topic:       state.activeTopic,
@@ -391,12 +439,8 @@ function submitMisconception(questionId) {
     }, function(data) {
         if (resultDiv) {
             var rendered = typeof renderMathContent === 'function' ? renderMathContent(data.response) : data.response.replace(/\n/g, '<br>');
-            resultDiv.innerHTML = '<div style="background:var(--bg-raised);border:1px solid rgba(239,68,68,0.2);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.8;color:var(--text-secondary);">' + rendered + '</div>';
-            var out = document.getElementById('eng-output');
-            if (out && typeof typesetEl === 'function') typesetEl(out);
-            else if (window.MathJax && window.MathJax.typesetPromise) {
-                setTimeout(function() { window.MathJax.typesetPromise([out]).catch(function(){}); }, 50);
-            }
+            resultDiv.innerHTML = '<div style="background:var(--e-bg3);border:1px solid rgba(239,68,68,0.15);border-left:3px solid #ef4444;border-radius:0 10px 10px 0;padding:16px 18px;font-size:13px;line-height:1.85;color:var(--e-t2);animation:e-in 0.3s var(--e-ease);">' + rendered + '</div>';
+            typesetOutput();
         }
     });
 }
@@ -415,7 +459,7 @@ function selectSem(sem, btn) {
     clearSectionBar();
     clearFilters();
     var label = (state.syllabus && state.syllabus[sem]) ? state.syllabus[sem].label : sem;
-    setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol">&#x222B;</div><div class="eng-welcome-title">' + label + '</div><div class="eng-welcome-sub">Select a topic from the left to begin.</div></div>');
+    setOutput(buildWelcomeHTML('&#x222B;', label, 'Select a topic from the left to begin.'));
 }
 
 function renderTopicList(sem) {
@@ -423,12 +467,14 @@ function renderTopicList(sem) {
     if (!list || !state.syllabus || !state.syllabus[sem]) { if(list) list.innerHTML = ''; return; }
     var topics = state.syllabus[sem].topics;
     list.innerHTML = '';
+    var idx = 0;
     Object.keys(topics).forEach(function(key) {
         var t = topics[key];
         var btn = document.createElement('button');
         btn.className = 'eng-topic-btn';
         btn.setAttribute('data-topic', key);
         btn.textContent = t.label;
+        btn.style.animation = 'e-in 0.25s var(--e-ease) ' + (idx * 0.04) + 's both';
         btn.addEventListener('click', function() {
             selectTopic(key, btn);
         });
@@ -436,6 +482,7 @@ function renderTopicList(sem) {
         group.className = 'eng-topic-group';
         group.appendChild(btn);
         list.appendChild(group);
+        idx++;
     });
 }
 
@@ -447,20 +494,17 @@ function selectTopic(topicKey, btn) {
     renderSubtopics(topicKey);
     clearSectionBar();
     clearFilters();
-    closeSidebar(); // close drawer on mobile after topic selected
+    closeSidebar();
 
-    // If misconception tab is active, load questions for this topic immediately
     if (state.activeTab === 'misconception') {
         fetchMisconceptions();
         return;
     }
-
-    // For Subject Connections tab — show topic-level connections immediately
     if (state.activeTab === 'connections') {
         fetchConnections();
         return;
     }
-    setOutput('<div class="eng-welcome"><div class="eng-welcome-symbol" style="font-size:36px;font-family:var(--font-mono)">{ }</div><div class="eng-welcome-title">' + btn.textContent + '</div><div class="eng-welcome-sub">Select a subtopic above to load content.</div></div>');
+    setOutput(buildWelcomeHTML('{ }', btn.textContent, 'Select a subtopic above to load content.'));
 }
 
 function renderSubtopics(topicKey) {
@@ -468,16 +512,16 @@ function renderSubtopics(topicKey) {
     if (!bar || !state.syllabus || !state.activeSem) { if(bar) bar.classList.add('hidden'); return; }
     var sem = state.syllabus[state.activeSem];
     if (!sem || !sem.topics[topicKey]) { bar.classList.add('hidden'); return; }
-
     if (state.activeTab === 'connections') { bar.classList.add('hidden'); return; }
 
     var subs = sem.topics[topicKey].subtopics;
     bar.innerHTML = '';
-    subs.forEach(function(s) {
+    subs.forEach(function(s, idx) {
         var btn = document.createElement('button');
         btn.className = 'eng-chip';
         btn.setAttribute('data-sub', s);
         btn.textContent = s;
+        btn.style.animation = 'e-in 0.2s var(--e-ease) ' + (idx * 0.03) + 's both';
         btn.addEventListener('click', function() {
             selectSubtopic(s, btn);
         });
@@ -503,6 +547,8 @@ function selectSubtopic(sub, btn) {
     } else if (state.activeTab === 'formulabook') {
         document.getElementById('eng-section-bar').classList.add('hidden');
         fetchFormulaBooklet();
+    } else if (state.activeTab === 'connections') {
+        fetchConnections();
     } else if (state.activeTab === 'pyq') {
         document.getElementById('eng-pyq-filters').classList.remove('hidden');
         document.getElementById('eng-section-bar').classList.add('hidden');
@@ -550,7 +596,7 @@ function fetchFormulaBooklet() {
 function fetchConnections() {
     var displayName = state.activeSubtopic || (state.activeTopic ? getTopicLabel(state.activeTopic) : '');
     if (!state.activeTopic) return;
-    showLoading('Loading Subject Connections for ' + displayName + '...');
+    showLoading('Mapping connections for ' + displayName + '...');
     postToAPI('/eng/connections', {
         topic: state.activeTopic,
         subtopic: state.activeSubtopic || displayName
@@ -571,30 +617,36 @@ function getTopicLabel(topicKey) {
 }
 
 function renderConnectionsCard(connections, topicLabel, refs) {
-    var colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+    var palettes = [
+        { color: '#4f9cf7', bg: 'rgba(79,156,247,0.08)', border: 'rgba(79,156,247,0.2)' },
+        { color: '#4ade80', bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.2)' },
+        { color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.2)' },
+        { color: '#f87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.2)' },
+        { color: '#a78bfa', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.2)' },
+        { color: '#22d3ee', bg: 'rgba(34,211,238,0.08)', border: 'rgba(34,211,238,0.2)' }
+    ];
+
     var html = '<div style="padding:4px 0">';
-    html += '<div style="margin-bottom:20px;">';
-    html += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#3b82f6;margin-bottom:4px;">Subject Connections Map</div>';
-    html += '<div style="font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;">' + topicLabel + '</div>';
-    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">Where this mathematics appears in your engineering degree</div>';
+    html += '<div style="margin-bottom:24px;">';
+    html += '<div style="font-family:var(--e-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#22d3ee;margin-bottom:6px;">&#x2194; Subject Connections Map</div>';
+    html += '<div style="font-size:20px;font-weight:800;color:var(--e-t1);letter-spacing:-.4px;">' + topicLabel + '</div>';
+    html += '<div style="font-size:12.5px;color:var(--e-t3);margin-top:6px;">Where this mathematics powers your engineering subjects</div>';
     html += '</div>';
 
     connections.forEach(function(c, i) {
-        var color = colors[i % colors.length];
-        html += '<div style="margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">';
-        // Header
-        html += '<div style="background:' + color + '18;border-left:3px solid ' + color + ';padding:12px 16px;display:flex;align-items:center;gap:12px;">';
+        var p = palettes[i % palettes.length];
+        html += '<div class="eng-card" style="animation-delay:' + (i * 0.08) + 's">';
+        html += '<div class="eng-card-header" style="background:' + p.bg + ';border-left:3px solid ' + p.color + ';">';
         html += '<div style="flex:1;">';
-        html += '<div style="font-size:14px;font-weight:700;color:' + color + ';letter-spacing:-.2px;">' + c.subject + '</div>';
-        html += '<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;font-family:var(--font-mono);">' + c.semester + '</div>';
+        html += '<div style="font-size:14px;font-weight:700;color:' + p.color + ';letter-spacing:-.2px;">' + c.subject + '</div>';
+        html += '<div style="font-size:11px;color:var(--e-t3);margin-top:2px;font-family:var(--e-mono);">' + c.semester + '</div>';
         html += '</div>';
-        html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 10px;border-radius:9999px;background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44;">Engineering</div>';
+        html += '<div class="eng-card-tag" style="background:' + p.bg + ';color:' + p.color + ';border:1px solid ' + p.border + ';">Engineering</div>';
         html += '</div>';
-        // Body
-        html += '<div style="background:var(--bg-surface);padding:12px 16px;">';
-        html += '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7;margin-bottom:10px;">' + c.how + '</div>';
-        html += '<div style="background:var(--bg-raised);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);">';
-        html += '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:' + color + ';display:block;margin-bottom:6px;">Example</span>';
+        html += '<div class="eng-card-body">';
+        html += '<div style="font-size:12.5px;color:var(--e-t2);line-height:1.75;margin-bottom:12px;">' + c.how + '</div>';
+        html += '<div style="background:var(--e-bg3);border:1px solid var(--e-border);border-radius:8px;padding:12px 16px;font-family:var(--e-mono);font-size:12px;color:var(--e-t2);">';
+        html += '<span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:' + p.color + ';display:block;margin-bottom:8px;">Example</span>';
         html += c.example;
         html += '</div>';
         html += '</div>';
@@ -603,27 +655,9 @@ function renderConnectionsCard(connections, topicLabel, refs) {
 
     html += '</div>';
 
-    // References
-    var refsHtml = '';
-    if (refs && refs.length) {
-        var links = refs.map(function(url) {
-            var label = url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0];
-            return '<a href="' + url + '" target="_blank" rel="noopener" class="eng-refs-list" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;text-decoration:none;padding:5px 12px;border-radius:6px;font-size:11px;font-family:var(--font-mono);margin:3px;">&#x1F517; ' + label + '</a>';
-        }).join('');
-        refsHtml = '<div style="margin-top:16px;padding:14px 16px;background:var(--bg-raised);border:1px solid rgba(255,255,255,0.06);border-left:2px solid #3b82f6;border-radius:0 8px 8px 0;">';
-        refsHtml += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#3b82f6;margin-bottom:10px;">References</div>';
-        refsHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + links + '</div>';
-        refsHtml += '</div>';
-    }
-
+    var refsHtml = buildRefsHTML(refs);
     setOutput('<div class="eng-response">' + html + '</div>' + refsHtml);
-
-    // Typeset math in the connections
-    var out = document.getElementById('eng-output');
-    if (out && typeof typesetEl === 'function') typesetEl(out);
-    else if (window.MathJax && window.MathJax.typesetPromise) {
-        setTimeout(function() { window.MathJax.typesetPromise([out]).catch(function(){}); }, 50);
-    }
+    typesetOutput();
 }
 
 function fetchPYQ() {
@@ -645,7 +679,7 @@ function fetchMockTest() {
     if (!state.activeSubtopic) return;
     var numQ  = document.getElementById('eng-numq-select').value;
     var marks = document.getElementById('eng-marks-select').value;
-    showLoading('Generating ' + numQ + '-question mock test on ' + state.activeSubtopic + '...');
+    showLoading('Generating ' + numQ + '-question mock test...');
     postToAPI('/eng/mocktest', {
         topic: state.activeTopic,
         subtopic: state.activeSubtopic,
@@ -679,14 +713,14 @@ function postToAPI(endpoint, payload, cb) {
     .then(function(data){
         state.loading = false;
         if (data.error) {
-            setOutput('<div class="eng-response"><p style="color:#f87171">Error: ' + data.error + '</p></div>');
+            setOutput('<div class="eng-response"><p style="color:var(--e-rose)">Error: ' + data.error + '</p></div>');
         } else {
             cb(data);
         }
     })
     .catch(function(e){
         state.loading = false;
-        setOutput('<div class="eng-response"><p style="color:#f87171">Network error. Please try again.</p></div>');
+        setOutput('<div class="eng-response"><p style="color:var(--e-rose)">Network error. Please try again.</p></div>');
     });
 }
 
@@ -694,7 +728,7 @@ function postToAPI(endpoint, payload, cb) {
 //  RENDERING
 // ══════════════════════════════════════════════════════════════
 function showLoading(msg) {
-    setOutput('<div class="eng-loading"><div class="eng-spinner"></div>' + (msg || 'Loading...') + '</div>');
+    setOutput('<div class="eng-loading"><div class="eng-spinner"></div><span>' + (msg || 'Loading...') + '</span></div>');
 }
 
 function renderResponse(text, source, refs, prereqs) {
@@ -702,41 +736,66 @@ function renderResponse(text, source, refs, prereqs) {
     if (typeof renderMathContent === 'function') {
         rendered = renderMathContent(text);
     } else {
-        rendered = '<p class="vr-para">' + text.replace(/\n{2,}/g, '</p><p class="vr-para">').replace(/\n/g, '<br>') + '</p>';
+        rendered = '<p class="vr-para">' +
+            text.replace(/\n{2,}/g, '</p><p class="vr-para">')
+                .replace(/\n/g, '<br>') + '</p>';
     }
 
-    // Prerequisites banner
+    // Prerequisites
     var prereqHtml = '';
     if (prereqs && prereqs.length) {
         var pills = prereqs.map(function(p) {
             return '<span class="eng-prereq-pill">' + p + '</span>';
         }).join('');
         prereqHtml = '<div class="eng-prereq-banner">';
-        prereqHtml += '<div class="eng-prereq-label">Prerequisites for this topic</div>';
+        prereqHtml += '<div class="eng-prereq-label">Prerequisites</div>';
         prereqHtml += '<div class="eng-prereq-pills">' + pills + '</div>';
         prereqHtml += '</div>';
     }
 
-    var sourceHtml = source ? '<div style="margin-top:12px;font-size:10px;font-family:var(--font-mono);color:var(--text-disabled)">Source: ' + source + '</div>' : '';
-    var refsHtml = '';
-    if (refs && refs.length) {
-        var links = refs.map(function(url) {
-            var label = url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0];
-            return '<a href="' + url + '" target="_blank" rel="noopener">&#x1F517; ' + label + '</a>';
-        }).join('');
-        refsHtml = '<div class="eng-refs"><div class="eng-refs-title">References &amp; Further Reading</div><div class="eng-refs-list">' + links + '</div></div>';
-    }
+    var sourceHtml = source
+        ? '<div style="margin-top:14px;font-size:10px;font-family:var(--e-mono);color:var(--e-t4);display:flex;align-items:center;gap:6px;"><span style="width:4px;height:4px;border-radius:50%;background:var(--e-blue);display:inline-block;"></span>Source: ' + source + '</div>'
+        : '';
+
+    var refsHtml = buildRefsHTML(refs);
+
     setOutput(prereqHtml + '<div class="eng-response">' + rendered + sourceHtml + '</div>' + refsHtml);
+    typesetOutput();
+}
+
+function buildRefsHTML(refs) {
+    if (!refs || !refs.length) return '';
+    var links = refs.map(function(url) {
+        var label = url.replace(/^https?:\/\/(?:www\.)?/, '').split('/')[0];
+        return '<a href="' + url + '" target="_blank" rel="noopener">&#x1F517; ' + label + '</a>';
+    }).join('');
+    return [
+        '<div class="eng-refs">',
+        '  <div class="eng-refs-title">References &amp; Further Reading</div>',
+        '  <div class="eng-refs-list">' + links + '</div>',
+        '</div>'
+    ].join('');
+}
+
+function typesetOutput() {
     var out = document.getElementById('eng-output');
-    if (out && typeof typesetEl === 'function') typesetEl(out);
-    else if (window.MathJax && window.MathJax.typesetPromise) {
-        setTimeout(function() { window.MathJax.typesetPromise([out]).catch(function(){}); }, 50);
+    if (!out) return;
+    if (typeof typesetEl === 'function') {
+        typesetEl(out);
+    } else if (window.MathJax && window.MathJax.typesetPromise) {
+        setTimeout(function() {
+            window.MathJax.typesetPromise([out]).catch(function(){});
+        }, 60);
     }
 }
 
 function setOutput(html) {
     var out = document.getElementById('eng-output');
-    if (out) out.innerHTML = html;
+    if (out) {
+        out.innerHTML = html;
+        // Scroll to top of output on new content
+        out.scrollTop = 0;
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
