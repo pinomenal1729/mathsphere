@@ -34,31 +34,26 @@ function injectLanding() {
     el.id = 'mode-landing';
     el.className = 'hidden';
     el.innerHTML = [
-        '<div class="landing-logo">',
-        '  <div class="landing-logo-mark">M</div>',
-        '  <div>',
-        '    <div style="font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:var(--eng-mono)">MathSphere</div>',
-        '    <div class="landing-tagline">Engineering Mathematics Platform</div>',
-        '  </div>',
-        '</div>',
-        '<div class="landing-title">Select Operating Mode</div>',
-        '<div class="landing-title-main">Choose your learning path</div>',
-        '<div class="landing-sub">General Mathematics for all levels &nbsp;|&nbsp; Engineering Mathematics for B.Tech Sem 1-4</div>',
+        '<div class="landing-eyebrow">MathSphere Platform</div>',
+        '<div class="landing-title-main">Mathematics for <span>Engineers</span></div>',
+        '<div class="landing-sub">Choose your learning environment. Switch anytime from the header.</div>',
         '<div class="landing-cards">',
         '  <div class="landing-card landing-card--general" onclick="window.engModule.chooseMode(\'general\')">',
-        '    <div class="landing-card-icon">&#x2211;</div>',
+        '    <div class="landing-card-tag">All Levels</div>',
+        '    <div class="landing-card-icon-wrap">&#x2211;</div>',
         '    <div class="landing-card-title">General Mathematics</div>',
-        '    <div class="landing-card-desc">Ask Anupam, Intuition Builder, Story Mode, PYQ Practice, Graph Plotter, Mock Tests — Class 11 to research level.</div>',
-        '    <span class="landing-card-badge">All levels</span>',
+        '    <div class="landing-card-desc">Ask Anupam, Intuition Builder, Story Mode, PYQ Practice, Graph Plotter, Mock Tests — from Class 11 to research level.</div>',
+        '    <div class="landing-card-arrow">Open General Mode &rarr;</div>',
         '  </div>',
         '  <div class="landing-card landing-card--engineering" onclick="window.engModule.chooseMode(\'engineering\')">',
-        '    <div class="landing-card-icon" style="font-size:16px">&#x222B;&#x2207;</div>',
+        '    <div class="landing-card-tag">B.Tech Sem 1&ndash;4</div>',
+        '    <div class="landing-card-icon-wrap" style="font-family:var(--e-mono);font-size:18px">&#x222B;&#x2207;</div>',
         '    <div class="landing-card-title">Engineering Mathematics</div>',
-        '    <div class="landing-card-desc">IIT/NIT syllabus Sem 1-4. Definitions, Theorems, Visual Intuition, PYQs from universities across India, Formula Booklet, Misconception Detector.</div>',
-        '    <span class="landing-card-badge">B.Tech Sem 1-4</span>',
+        '    <div class="landing-card-desc">IIT/NIT syllabus. 200+ subtopics. Visual Intuition, PYQs from universities across India, Formula Booklet, Misconception Detector.</div>',
+        '    <div class="landing-card-arrow">Open Engineering Mode &rarr;</div>',
         '  </div>',
         '</div>',
-        '<div class="landing-footer">// choice stored in localStorage — switch anytime via header button</div>'
+        '<div class="landing-footer">Your choice is saved automatically</div>'
     ].join('');
     document.body.appendChild(el);
 }
@@ -714,11 +709,11 @@ function renderResponse(text, source, refs, prereqs) {
     var prereqHtml = '';
     if (prereqs && prereqs.length) {
         var pills = prereqs.map(function(p) {
-            return '<span style="display:inline-block;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;padding:3px 10px;border-radius:9999px;font-size:11px;font-family:var(--font-mono);margin:2px;">' + p + '</span>';
+            return '<span class="eng-prereq-pill">' + p + '</span>';
         }).join('');
-        prereqHtml = '<div style="margin-bottom:16px;padding:12px 16px;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.15);border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;">';
-        prereqHtml += '<div style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3b82f6;margin-bottom:8px;">Prerequisites for this topic</div>';
-        prereqHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + pills + '</div>';
+        prereqHtml = '<div class="eng-prereq-banner">';
+        prereqHtml += '<div class="eng-prereq-label">Prerequisites for this topic</div>';
+        prereqHtml += '<div class="eng-prereq-pills">' + pills + '</div>';
         prereqHtml += '</div>';
     }
 
