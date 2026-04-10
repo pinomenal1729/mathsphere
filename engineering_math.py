@@ -4263,7 +4263,7 @@ def get_student_progress():
         percentage = round((completed / total_subtopics) * 100, 1) if total_subtopics > 0 else 0
 
         gate_stats = progress.get("gate_progress", {})
-                gate_accuracy = 0
+        gate_accuracy = 0
         if gate_stats.get("questions_attempted", 0) > 0:
             gate_accuracy = round(
                 (gate_stats["questions_correct"] / gate_stats["questions_attempted"]) * 100, 1
