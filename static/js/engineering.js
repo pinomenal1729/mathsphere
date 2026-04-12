@@ -462,9 +462,7 @@ function renderGateSidebar() {
             { key: 'formulas',       label: 'Quick Formulas', icon: '&#x26A1;' },
             { key: 'misconceptions', label: 'Trap Questions', icon: '&#x26A0;' },
             { key: 'syllabus',       label: 'Branch Syllabus', icon: '&#x1F4DA;' },
-            { key: 'analysis',       label: 'Topic Analysis', icon: '&#x1F50D;' },
-            { key: 'jam',            label: 'IIT JAM Practice', icon: '&#x1F393;' },
-            { key: 'csir',           label: 'CSIR NET Practice', icon: '&#x1F52C;' }
+            { key: 'analysis',       label: 'Topic Analysis', icon: '&#x1F50D;' }
         ];
 
         gateTabs.forEach(function(t, idx) {
@@ -516,17 +514,7 @@ function renderGateBranchSelection() {
     html += '</div>';
 
     // Also show JAM and CSIR cards
-    html += '<div class="gate-other-exams">';
-    html += '<div class="gate-other-title">Also Available</div>';
-    html += '<div class="gate-other-grid">';
-    html += '<div class="gate-other-card" onclick="window.engModule.switchGateTab(\'jam\')">';
-    html += '<span>&#x1F393;</span><div>IIT JAM</div><div class="gate-other-sub">Mathematics Practice</div>';
-    html += '</div>';
-    html += '<div class="gate-other-card" onclick="window.engModule.switchGateTab(\'csir\')">';
-    html += '<span>&#x1F52C;</span><div>CSIR NET</div><div class="gate-other-sub">Mathematical Sciences</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
+   
 
     html += '</div>';
     setOutput(html);
@@ -575,8 +563,6 @@ function renderGateMainPanel() {
         case 'misconceptions': renderGateMisconceptions(); break;
         case 'syllabus':    renderGateSyllabusPanel(branch, branchLabel); break;
         case 'analysis':    renderGateAnalysis(); break;
-        case 'jam':         renderJAMPractice(); break;
-        case 'csir':        renderCSIRPractice(); break;
         default:            renderGatePractice(branch, branchLabel);
     }
 }
