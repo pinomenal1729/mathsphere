@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f6f4ee">
-    <meta name="description" content="MathSphere helps students see, understand and practise engineering mathematics through visual lessons and guided problem solving.">
-    <title>MathSphere — See Mathematics Clearly</title>
+    <meta name="theme-color" content="#080b0d">
+    <meta name="description" content="Enter mathematics through living explanations, visual experiments, deliberate practice and carefully checked problem solving with Anupam.">
+    <title>MathSphere — Enter the Mathematics</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <script>
@@ -26,265 +26,214 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
 </head>
 <body>
-    <a class="skip-link" href="#mainContent">Skip to content</a>
+    <a class="skip-link" href="#mainContent">Skip to the mathematics</a>
 
     <header class="site-header" id="siteHeader">
         <a class="brand" href="#home" data-view-link="home" aria-label="MathSphere home">
-            <span class="brand-mark" aria-hidden="true"><span class="brand-sigma">&Sigma;</span></span>
-            <span class="brand-copy"><strong>MathSphere</strong><small>with Anupam</small></span>
+            <span class="brand-orbit" aria-hidden="true"><i></i></span>
+            <span><strong>MathSphere</strong><small>Anupam Nigam</small></span>
         </a>
 
+        <div class="header-coordinate" aria-hidden="true"><span>x</span> 27.1767 &nbsp; <span>y</span> 78.0081</div>
+
         <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="mainNav" aria-label="Open navigation">
-            <span></span><span></span>
+            <span>Navigate</span><i></i><i></i>
         </button>
 
         <nav class="main-nav" id="mainNav" aria-label="Primary navigation">
-            <button class="nav-link" type="button" data-view="learn">Learn</button>
-            <button class="nav-link" type="button" data-view="visuals">Visual Labs</button>
-            <button class="nav-link" type="button" data-view="practice">Practice</button>
-            <button class="nav-ask" type="button" data-view="ask">
-                Ask Anupam
-                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
-            </button>
+            <div class="nav-field" aria-hidden="true"></div>
+            <p class="nav-caption">Choose a way of thinking</p>
+            <button type="button" data-view="learn"><span>01</span><strong>Understand</strong><small>Build the idea from first principles</small></button>
+            <button type="button" data-view="visuals"><span>02</span><strong>Experiment</strong><small>Move the mathematics and observe</small></button>
+            <button type="button" data-view="practice"><span>03</span><strong>Attempt</strong><small>Think on one problem at a time</small></button>
+            <button type="button" data-view="ask"><span>04</span><strong>Question</strong><small>Work through it with Anupam</small></button>
+            <p class="nav-foot">Four spaces. One connected mathematical universe.</p>
         </nav>
     </header>
 
     <main id="mainContent">
-        <!-- HOME -->
-        <section class="view active" id="view-home" data-page-title="See Mathematics Clearly">
-            <div class="hero page-shell">
-                <div class="hero-copy reveal">
-                    <div class="eyebrow"><span></span> Mathematics you can finally see</div>
-                    <h1>Don&rsquo;t just solve mathematics. <em>See why it works.</em></h1>
-                    <p class="hero-lede">Build intuition, experiment with ideas and practise with guidance&mdash;all in one calm learning space.</p>
+        <section class="view active universe-view" id="view-home" data-page-title="Enter the Mathematics">
+            <div class="universe-grid" aria-hidden="true"></div>
+            <div class="construction-sequence" aria-hidden="true">
+                <span class="origin-point"></span><span class="origin-line"></span><span class="origin-plane"></span>
+            </div>
+            <canvas id="heroCanvas" aria-hidden="true"></canvas>
 
-                    <form class="hero-ask" id="heroAskForm">
-                        <label class="sr-only" for="heroQuestion">Ask a mathematics question</label>
-                        <input id="heroQuestion" type="text" autocomplete="off" placeholder="What would you like to understand?">
-                        <button type="submit" aria-label="Ask this question">
-                            <span>Ask</span>
-                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
-                        </button>
-                    </form>
-
-                    <div class="hero-actions">
-                        <button class="primary-btn" type="button" data-view="learn">Start learning</button>
-                        <button class="text-btn" type="button" data-view="visuals">
-                            Open a visual lab
-                            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="hero-visual reveal delay-one" aria-label="Interactive vector illustration">
-                    <div class="visual-label"><span class="pulse-dot"></span> Live idea</div>
-                    <canvas id="heroCanvas"></canvas>
-                    <div class="visual-equation">
-                        <span class="eq-chip eq-a">2a</span><span>+</span><span class="eq-chip eq-b">b</span><span>=</span><strong>one new direction</strong>
-                    </div>
-                </div>
+            <div class="universe-copy">
+                <p class="universe-kicker">A living space for mathematical thought</p>
+                <h1>Enter the<br><em>mathematics.</em></h1>
+                <p>Not a list of tools. A place to understand, experiment, attempt and question.</p>
             </div>
 
-            <div class="journeys page-shell">
-                <div class="section-intro reveal">
-                    <span class="section-number">01</span>
-                    <div><p class="kicker">Choose one clear path</p><h2>What do you want to do today?</h2></div>
-                </div>
-
-                <div class="journey-grid">
-                    <button class="journey-card learn-card reveal" type="button" data-view="learn">
-                        <span class="journey-index">01</span>
-                        <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 10h13a6 6 0 016 6v24a6 6 0 00-6-6H8V10z"/><path d="M40 10H27v30a6 6 0 016-6h7V10z"/></svg></span>
-                        <span class="journey-title">Learn a concept</span>
-                        <span class="journey-text">Begin with the story and intuition, then arrive at the formal mathematics.</span>
-                        <span class="journey-link">Start a lesson <span>&rarr;</span></span>
-                    </button>
-
-                    <button class="journey-card visual-card reveal delay-one" type="button" data-view="visuals">
-                        <span class="journey-index">02</span>
-                        <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 38L19 27l7 6 14-17"/><path d="M34 16h6v6"/><path d="M8 9v29h32"/></svg></span>
-                        <span class="journey-title">Explore a visual lab</span>
-                        <span class="journey-text">Move vectors, transform grids and discover what equations are really doing.</span>
-                        <span class="journey-link">Open a lab <span>&rarr;</span></span>
-                    </button>
-
-                    <button class="journey-card practice-card reveal delay-two" type="button" data-view="practice">
-                        <span class="journey-index">03</span>
-                        <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M12 8h24v32H12z"/><path d="M18 17h12M18 24h12M18 31h6"/><path d="M31 30l3 3 6-7"/></svg></span>
-                        <span class="journey-title">Practise and improve</span>
-                        <span class="journey-text">Generate focused questions, ask for a hint and check your own working.</span>
-                        <span class="journey-link">Begin practice <span>&rarr;</span></span>
-                    </button>
-                </div>
+            <div class="orbit-navigation" aria-label="MathSphere destinations">
+                <button class="orbit-node node-understand" type="button" data-view="learn"><span>01</span><strong>Understand</strong><small>from meaning to proof</small></button>
+                <button class="orbit-node node-experiment" type="button" data-view="visuals"><span>02</span><strong>Experiment</strong><small>touch the idea</small></button>
+                <button class="orbit-node node-attempt" type="button" data-view="practice"><span>03</span><strong>Attempt</strong><small>learn from the step</small></button>
+                <button class="orbit-node node-question" type="button" data-view="ask"><span>04</span><strong>Question</strong><small>reason with Anupam</small></button>
             </div>
 
-            <div class="featured page-shell reveal">
-                <div class="featured-copy">
-                    <span class="feature-tag">Featured lesson</span>
-                    <p class="kicker">Linear Algebra</p>
-                    <h2>When two arrows create an entire plane</h2>
-                    <p>See how linear combinations turn two independent directions into infinitely many reachable points.</p>
-                    <button class="primary-btn" type="button" data-lesson="linear combinations and span">Explore this idea</button>
-                </div>
-                <div class="featured-art" aria-hidden="true">
-                    <div class="plane-grid"></div>
-                    <span class="plane-arrow arrow-one"></span><span class="plane-arrow arrow-two"></span>
-                    <span class="plane-dot dot-one"></span><span class="plane-dot dot-two"></span><span class="plane-dot dot-three"></span>
-                </div>
+            <form class="universe-question" id="heroAskForm">
+                <label for="heroQuestion">Or begin with a question</label>
+                <div><input id="heroQuestion" type="text" autocomplete="off" placeholder="Why do eigenvectors keep their direction?"><button type="submit">Ask <span aria-hidden="true">↗</span></button></div>
+            </form>
+
+            <p class="universe-signature">MATHSPHERE / 2026 &nbsp; · &nbsp; MOVE YOUR CURSOR THROUGH THE FIELD</p>
+        </section>
+
+        <section class="view manuscript-view" id="view-learn" data-page-title="Understand">
+            <div class="section-coordinate" aria-hidden="true">SPACE 01 / UNDERSTAND</div>
+            <div class="section-intro">
+                <p class="section-kicker">A living proof manuscript</p>
+                <h1>Follow an idea<br><em>as it becomes inevitable.</em></h1>
+                <p>Begin with the need. Notice the pattern. Experiment. Name the idea. Then make it precise.</p>
+            </div>
+
+            <div class="proof-thread" aria-label="Lesson progression">
+                <span class="active"><b>01</b>Problem</span><i></i><span><b>02</b>Observation</span><i></i><span><b>03</b>Experiment</span><i></i><span><b>04</b>Idea</span><i></i><span><b>05</b>Definition</span><i></i><span><b>06</b>Challenge</span>
+            </div>
+
+            <div class="manuscript-shell">
+                <aside class="chapter-index" aria-label="Suggested mathematical ideas">
+                    <p>Open a chapter</p>
+                    <button class="topic-row active" type="button" data-topic="Linear combinations and span"><span>01</span><strong>Linear combinations</strong><small>How vectors create a space</small></button>
+                    <button class="topic-row" type="button" data-topic="Gaussian elimination"><span>02</span><strong>Elimination</strong><small>Changing form, preserving truth</small></button>
+                    <button class="topic-row" type="button" data-topic="Eigenvalues and eigenvectors"><span>03</span><strong>Eigenvectors</strong><small>Directions that refuse to turn</small></button>
+                    <button class="topic-row" type="button" data-topic="Limits and continuity"><span>04</span><strong>Limits</strong><small>The mathematics of approaching</small></button>
+                </aside>
+
+                <article class="lesson-manuscript">
+                    <header class="manuscript-head">
+                        <div><span>Current idea</span><h2 id="lessonTopicTitle">Linear combinations and span</h2></div>
+                        <label class="field compact"><span>Voice</span><select id="lessonStyle"><option value="intuition">Intuitive</option><option value="eli10">Simple</option><option value="storytelling">Story</option><option value="three_depths">Three depths</option><option value="socratic">Socratic</option></select></label>
+                    </header>
+                    <div class="lesson-prompt-row">
+                        <label class="sr-only" for="lessonPrompt">Lesson topic</label>
+                        <input id="lessonPrompt" type="text" value="Linear combinations and span" autocomplete="off">
+                        <button class="action-button" id="buildLessonBtn" type="button">Construct lesson <span>↗</span></button>
+                    </div>
+                    <div class="lesson-empty" id="lessonEmpty">
+                        <p class="folio">I</p>
+                        <p class="opening-line">Suppose two directions are all you are allowed to use.</p>
+                        <div class="seed-equation">αa + βb = <span>?</span></div>
+                        <p>Choose a chapter or write any topic. The lesson will unfold as a connected line of reasoning—not as disconnected notes.</p>
+                    </div>
+                    <div class="ai-result hidden" id="lessonResult" aria-live="polite"></div>
+                </article>
             </div>
         </section>
 
-        <!-- LEARN -->
-        <section class="view" id="view-learn" data-page-title="Learn">
-            <div class="inner-page page-shell">
-                <div class="page-heading reveal">
-                    <span class="page-kicker">Learn</span>
-                    <h1>Begin with meaning.<br><em>Then build the mathematics.</em></h1>
-                    <p>One lesson space replaces Story Mode, Intuition Builder, Explain Simply and 3 Depths.</p>
+        <section class="view laboratory-view" id="view-visuals" data-page-title="Experiment">
+            <div class="section-coordinate" aria-hidden="true">SPACE 02 / EXPERIMENT</div>
+            <header class="lab-header">
+                <div><p class="section-kicker">A responsive mathematical field</p><h1>Change the algebra.<br><em>Watch space answer.</em></h1></div>
+                <div class="lab-switcher" role="tablist" aria-label="Choose a visual experiment">
+                    <button class="lab-tab active" id="vectorLabTab" type="button" data-lab="vectors" role="tab" aria-selected="true"><span>01</span>Vector combinations</button>
+                    <button class="lab-tab" id="transformLabTab" type="button" data-lab="transform" role="tab" aria-selected="false"><span>02</span>Transformations</button>
                 </div>
+            </header>
 
-                <div class="lesson-layout">
-                    <aside class="topic-panel reveal" aria-label="Suggested topics">
-                        <div class="panel-label">Choose a starting point</div>
-                        <button class="topic-row active" type="button" data-topic="Linear combinations and span"><span>01</span><strong>Linear combinations</strong><small>How vectors build a space</small></button>
-                        <button class="topic-row" type="button" data-topic="Gaussian elimination"><span>02</span><strong>Gaussian elimination</strong><small>Solving by preserving truth</small></button>
-                        <button class="topic-row" type="button" data-topic="Eigenvalues and eigenvectors"><span>03</span><strong>Eigenvectors</strong><small>Directions that refuse to turn</small></button>
-                        <button class="topic-row" type="button" data-topic="Limits and continuity"><span>04</span><strong>Limits</strong><small>Getting infinitely close</small></button>
-                    </aside>
-
-                    <div class="learning-studio reveal delay-one">
-                        <div class="studio-head">
-                            <div><span class="panel-label">Your lesson</span><h2 id="lessonTopicTitle">Linear combinations and span</h2></div>
-                            <label class="select-field compact"><span>Explain it</span><select id="lessonStyle"><option value="intuition">Intuitively</option><option value="eli10">Simply</option><option value="storytelling">As a story</option><option value="three_depths">At three depths</option><option value="socratic">By questioning me</option></select></label>
-                        </div>
-
-                        <div class="lesson-prompt-row">
-                            <label class="sr-only" for="lessonPrompt">Lesson topic</label>
-                            <input id="lessonPrompt" type="text" value="Linear combinations and span" autocomplete="off">
-                            <button class="primary-btn" id="buildLessonBtn" type="button">Build my lesson</button>
-                        </div>
-
-                        <div class="empty-state" id="lessonEmpty">
-                            <span class="empty-symbol">&there4;</span>
-                            <h3>A lesson with a clear progression</h3>
-                            <div class="lesson-steps"><span><b>1</b> Need</span><i></i><span><b>2</b> Intuition</span><i></i><span><b>3</b> Mathematics</span><i></i><span><b>4</b> Example</span></div>
-                            <p>Choose a topic and MathSphere will build the explanation in the style that helps you most.</p>
-                        </div>
-                        <div class="ai-result hidden" id="lessonResult" aria-live="polite"></div>
-                    </div>
+            <div class="lab-panel active" id="lab-vectors" role="tabpanel" aria-labelledby="vectorLabTab">
+                <div class="lab-canvas-wrap">
+                    <canvas id="vectorCanvas"></canvas>
+                    <div class="canvas-axis axis-x">x</div><div class="canvas-axis axis-y">y</div>
+                    <div class="canvas-equation"><span>LIVE RELATION</span><strong id="vectorEquation">1.0a + 1.0b</strong></div>
+                    <div class="canvas-question">What region becomes reachable?</div>
                 </div>
+                <aside class="experiment-console">
+                    <p class="console-number">EXP / 01</p>
+                    <h2>Build one direction from two.</h2>
+                    <p>The cyan and blue arrows are the basis. The ivory arrow is the result. Move either coefficient and observe the reachable field.</p>
+                    <label class="range-field"><span><b>Coefficient α</b><output id="alphaOutput">1.0</output></span><input id="alphaRange" type="range" min="-2" max="2" step="0.1" value="1"></label>
+                    <label class="range-field"><span><b>Coefficient β</b><output id="betaOutput">1.0</output></span><input id="betaRange" type="range" min="-2" max="2" step="0.1" value="1"></label>
+                    <div class="observation"><span>OBSERVATION</span><p>Independent directions reach the whole plane. Parallel directions collapse the possibility to a line.</p></div>
+                </aside>
+            </div>
+
+            <div class="lab-panel" id="lab-transform" role="tabpanel" aria-labelledby="transformLabTab">
+                <div class="lab-canvas-wrap">
+                    <canvas id="transformCanvas"></canvas>
+                    <div class="canvas-axis axis-x">x</div><div class="canvas-axis axis-y">y</div>
+                    <div class="canvas-equation"><span>LIVE MATRIX</span><strong id="matrixEquation">[[1, 0], [0, 1]]</strong></div>
+                    <div class="canvas-question">What remains unchanged?</div>
+                </div>
+                <aside class="experiment-console">
+                    <p class="console-number">EXP / 02</p>
+                    <h2>A matrix is an action on space.</h2>
+                    <p>Move the basis vectors and the entire grid must follow. The determinant reports how signed area changes.</p>
+                    <div class="matrix-controls" aria-label="Matrix entries"><label><span>a</span><input id="mA" type="number" min="-3" max="3" step=".25" value="1"></label><label><span>b</span><input id="mB" type="number" min="-3" max="3" step=".25" value="0"></label><label><span>c</span><input id="mC" type="number" min="-3" max="3" step=".25" value="0"></label><label><span>d</span><input id="mD" type="number" min="-3" max="3" step=".25" value="1"></label></div>
+                    <div class="preset-row"><button type="button" data-matrix="1,1,0,1">Shear</button><button type="button" data-matrix="0,-1,1,0">Rotate</button><button type="button" data-matrix="1.5,0,0,.6">Stretch</button><button type="button" data-matrix="1,0,0,1">Reset</button></div>
+                    <div class="observation determinant"><span>DETERMINANT</span><strong id="determinantValue">1.00</strong><p>signed area scale</p></div>
+                </aside>
             </div>
         </section>
 
-        <!-- VISUAL LABS -->
-        <section class="view" id="view-visuals" data-page-title="Visual Labs">
-            <div class="inner-page page-shell">
-                <div class="page-heading split-heading reveal">
-                    <div><span class="page-kicker">Visual Labs</span><h1>Touch the idea.<br><em>Watch it respond.</em></h1></div>
-                    <p>Only the most useful experiments live here. Change a value and let the geometry explain the algebra.</p>
-                </div>
+        <section class="view blackboard-view" id="view-practice" data-page-title="Attempt">
+            <div class="section-coordinate" aria-hidden="true">SPACE 03 / ATTEMPT</div>
+            <div class="blackboard-intro">
+                <p class="section-kicker">Deliberate mathematical practice</p>
+                <h1>One problem.<br><em>Your complete attention.</em></h1>
+                <p>No points, streaks or leaderboards. The useful question is: where did the reasoning first change direction?</p>
+            </div>
 
-                <div class="lab-switcher reveal" role="tablist" aria-label="Choose a visual lab">
-                    <button class="lab-tab active" id="vectorLabTab" type="button" data-lab="vectors" role="tab" aria-selected="true">Vector combinations</button>
-                    <button class="lab-tab" id="transformLabTab" type="button" data-lab="transform" role="tab" aria-selected="false">Linear transformations</button>
-                </div>
+            <div class="practice-board">
+                <aside class="practice-setup">
+                    <p class="board-label">SET THE CONDITIONS</p>
+                    <label class="field"><span>Topic</span><select id="practiceTopic"><option>Linear Algebra</option><option>Calculus</option><option>Differential Equations</option><option>Probability</option><option>Number Theory</option></select></label>
+                    <label class="field"><span>Level</span><select id="practiceLevel"><option>Foundation</option><option selected>Undergraduate</option><option>GATE / JAM</option><option>Olympiad</option></select></label>
+                    <label class="field"><span>Focus</span><select id="practiceFocus"><option value="conceptual">Conceptual understanding</option><option value="calculation">Calculation</option><option value="proof">Proof and reasoning</option><option value="mixed">Mixed practice</option></select></label>
+                    <button class="action-button" id="generatePracticeBtn" type="button">Place one problem <span>↗</span></button>
+                    <p class="setup-note">The feedback identifies the first exact error before showing a corrected path.</p>
+                </aside>
 
-                <div class="lab-panel active reveal" id="lab-vectors" role="tabpanel" aria-labelledby="vectorLabTab">
-                    <div class="lab-canvas-wrap"><div class="canvas-caption"><span>Drag the coefficients</span><strong id="vectorEquation">1.0a + 1.0b</strong></div><canvas id="vectorCanvas"></canvas></div>
-                    <div class="lab-controls">
-                        <div class="lab-copy"><span class="panel-label">The experiment</span><h2>Build a vector from two directions</h2><p>The teal and blue arrows are your building blocks. The dark arrow is the vector their weighted combination creates.</p></div>
-                        <label class="range-field"><span><b>Coefficient of a</b><output id="alphaOutput">1.0</output></span><input id="alphaRange" type="range" min="-2" max="2" step="0.1" value="1"></label>
-                        <label class="range-field"><span><b>Coefficient of b</b><output id="betaOutput">1.0</output></span><input id="betaRange" type="range" min="-2" max="2" step="0.1" value="1"></label>
-                        <div class="insight-note"><span>Notice</span> With two independent directions, the result can reach every point in the plane.</div>
-                    </div>
-                </div>
-
-                <div class="lab-panel" id="lab-transform" role="tabpanel" aria-labelledby="transformLabTab">
-                    <div class="lab-canvas-wrap"><div class="canvas-caption"><span>Transform the grid</span><strong id="matrixEquation">[[1, 0], [0, 1]]</strong></div><canvas id="transformCanvas"></canvas></div>
-                    <div class="lab-controls">
-                        <div class="lab-copy"><span class="panel-label">The experiment</span><h2>See what a matrix does to space</h2><p>Each matrix moves the basis vectors. The entire grid must follow those two new directions.</p></div>
-                        <div class="matrix-controls" aria-label="Matrix entries">
-                            <label><span>a</span><input id="mA" type="number" min="-2" max="2" step="0.25" value="1"></label><label><span>b</span><input id="mB" type="number" min="-2" max="2" step="0.25" value="0"></label><label><span>c</span><input id="mC" type="number" min="-2" max="2" step="0.25" value="0"></label><label><span>d</span><input id="mD" type="number" min="-2" max="2" step="0.25" value="1"></label>
-                        </div>
-                        <div class="preset-row"><button type="button" data-matrix="1,1,0,1">Shear</button><button type="button" data-matrix="0,-1,1,0">Rotate</button><button type="button" data-matrix="1.5,0,0,.6">Stretch</button><button type="button" data-matrix="1,0,0,1">Reset</button></div>
-                        <div class="insight-note"><span>Determinant</span> <strong id="determinantValue">1.00</strong> measures the signed area scale.</div>
-                    </div>
-                </div>
+                <section class="practice-workspace">
+                    <header class="workspace-head"><div><span class="status-dot"></span><span id="practiceStatus">The board is clear</span></div><button id="newPracticeBtn" type="button">Replace problem</button></header>
+                    <div class="question-area" id="practiceQuestion"><span class="question-mark">?</span><h2>Choose the conditions.</h2><p>MathSphere will place exactly one focused problem on the board.</p></div>
+                    <div class="answer-area hidden" id="answerArea"><label for="studentAnswer">Your line of reasoning</label><textarea id="studentAnswer" rows="7" placeholder="Write every step you believe is justified..."></textarea><div class="answer-actions"><button id="hintBtn" type="button">Reveal one hint</button><button class="action-button" id="checkAnswerBtn" type="button">Examine my attempt <span>↗</span></button></div></div>
+                    <div class="ai-result hidden" id="practiceFeedback" aria-live="polite"></div>
+                </section>
             </div>
         </section>
 
-        <!-- PRACTICE -->
-        <section class="view" id="view-practice" data-page-title="Practice">
-            <div class="inner-page page-shell">
-                <div class="page-heading split-heading reveal">
-                    <div><span class="page-kicker">Practice</span><h1>Work it out.<br><em>Learn from the attempt.</em></h1></div>
-                    <p>Questions, hints, previous-year style practice and solution checking now live in one focused workspace.</p>
-                </div>
-
-                <div class="practice-layout">
-                    <div class="practice-setup reveal">
-                        <span class="panel-label">Set your practice</span>
-                        <label class="select-field"><span>Topic</span><select id="practiceTopic"><option>Linear Algebra</option><option>Calculus</option><option>Differential Equations</option><option>Probability</option><option>Number Theory</option></select></label>
-                        <label class="select-field"><span>Level</span><select id="practiceLevel"><option>Foundation</option><option selected>Undergraduate</option><option>GATE / JAM</option><option>Olympiad</option></select></label>
-                        <label class="select-field"><span>Focus</span><select id="practiceFocus"><option value="conceptual">Conceptual understanding</option><option value="calculation">Calculation</option><option value="proof">Proof and reasoning</option><option value="mixed">Mixed practice</option></select></label>
-                        <button class="primary-btn full-btn" id="generatePracticeBtn" type="button">Generate one question</button>
-                        <p class="setup-note">One question at a time. No distracting scoreboards or unnecessary dashboards.</p>
-                    </div>
-
-                    <div class="practice-workspace reveal delay-one">
-                        <div class="workspace-head"><div><span class="status-dot"></span><span id="practiceStatus">Ready when you are</span></div><button class="quiet-btn" id="newPracticeBtn" type="button">New question</button></div>
-                        <div class="question-area" id="practiceQuestion"><span class="empty-symbol">?</span><h3>Your question will appear here</h3><p>Choose a topic and level, then generate one carefully focused problem.</p></div>
-                        <div class="answer-area hidden" id="answerArea"><label for="studentAnswer">Your working</label><textarea id="studentAnswer" rows="6" placeholder="Write your reasoning or final answer here..."></textarea><div class="answer-actions"><button class="secondary-btn" id="hintBtn" type="button">Give me one hint</button><button class="primary-btn" id="checkAnswerBtn" type="button">Check my solution</button></div></div>
-                        <div class="ai-result hidden" id="practiceFeedback" aria-live="polite"></div>
-                    </div>
-                </div>
+        <section class="view notebook-view" id="view-ask" data-page-title="Question">
+            <div class="section-coordinate" aria-hidden="true">SPACE 04 / QUESTION</div>
+            <div class="notebook-intro">
+                <p class="section-kicker">A mathematician’s notebook</p>
+                <h1>Bring the question.<br><em>Keep the reasoning visible.</em></h1>
+                <p>Type the thought as it is, or attach a photograph. Image answers begin by transcribing what was read so you can check the interpretation.</p>
+                <div class="ask-prompts"><button type="button" data-question="Why does the determinant measure area?">Why does determinant measure area?</button><button type="button" data-question="Explain eigenvectors with a visual analogy">See eigenvectors geometrically</button><button type="button" data-question="How does gradient descent know which way to move?">How does gradient descent move?</button></div>
+                <div class="verification-legend" aria-label="Answer verification levels"><span><i class="symbolic"></i>Symbolic check when possible</span><span><i class="reviewed"></i>Independent review for substantial problems</span><span><i class="caution"></i>Unverified when a check is not possible</span></div>
             </div>
-        </section>
 
-        <!-- ASK -->
-        <section class="view" id="view-ask" data-page-title="Ask Anupam">
-            <div class="ask-page page-shell">
-                <div class="ask-intro reveal">
-                    <span class="page-kicker">Ask Anupam</span>
-                    <h1>Bring the question.<br><em>We&rsquo;ll build the understanding.</em></h1>
-                    <p>Type a question or upload a photograph of your problem. Choose how you want it explained.</p>
-                    <div class="ask-prompts"><button type="button" data-question="Why does the determinant measure area?">Why does determinant measure area?</button><button type="button" data-question="Explain eigenvectors with a visual analogy">Explain eigenvectors visually</button><button type="button" data-question="How does gradient descent know which way to move?">How does gradient descent move?</button></div>
-                </div>
+            <section class="question-notebook">
+                <header class="chat-toolbar">
+                    <div class="notebook-title"><span>∴</span><div><strong>Reasoning page</strong><small>Every step may be questioned</small></div></div>
+                    <label class="field compact"><span>Voice</span><select id="askMode"><option value="math">Step by step</option><option value="intuition">Intuitive</option><option value="eli10">Simple</option><option value="storytelling">Story</option><option value="socratic">Socratic</option><option value="three_depths">Three depths</option></select></label>
+                    <label class="field compact"><span>Level</span><select id="askLevel"><option>Class 11 / 12</option><option selected>Undergraduate</option><option>GATE / JAM / CSIR NET</option><option>Olympiad</option></select></label>
+                    <button class="clear-button" id="clearChatBtn" type="button">Clear page</button>
+                </header>
 
-                <div class="chat-studio reveal delay-one">
-                    <div class="chat-toolbar">
-                        <label class="select-field compact"><span>Response style</span><select id="askMode"><option value="math">Step by step</option><option value="intuition">Intuitively</option><option value="eli10">Simply</option><option value="storytelling">As a story</option><option value="socratic">Guide my thinking</option><option value="three_depths">At three depths</option></select></label>
-                        <label class="select-field compact"><span>Level</span><select id="askLevel"><option>Class 11 / 12</option><option selected>Undergraduate</option><option>GATE / JAM / CSIR NET</option><option>Olympiad</option></select></label>
-                        <button class="quiet-btn" id="clearChatBtn" type="button">Clear</button>
-                    </div>
-
-                    <div class="chat-messages" id="chatMessages" aria-live="polite"><div class="chat-welcome" id="chatWelcome"><span class="empty-symbol">&Sigma;</span><h2>What are you thinking about?</h2><p>Ask freely. A good mathematical question does not need to be perfectly worded.</p></div></div>
-
-                    <div class="upload-preview hidden" id="uploadPreview"><img id="uploadImage" alt="Selected mathematics problem"><div><strong>Image attached</strong><span id="uploadName"></span></div><button id="removeUploadBtn" type="button" aria-label="Remove attached image">&times;</button></div>
-
-                    <form class="chat-composer" id="chatForm">
-                        <label class="attach-control" for="askImage" title="Attach a photograph of a problem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5l-8.7 8.7a6 6 0 01-8.5-8.5l9.4-9.4a4 4 0 115.7 5.7L9.5 17.4a2 2 0 01-2.8-2.8l8.7-8.7"/></svg><span class="sr-only">Attach an image</span></label>
-                        <input id="askImage" type="file" accept="image/*" hidden>
-                        <label class="sr-only" for="askInput">Your mathematics question</label>
-                        <textarea id="askInput" rows="1" placeholder="Ask a mathematics question..."></textarea>
-                        <button class="composer-send" type="submit" aria-label="Send question"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></button>
-                    </form>
-                    <p class="composer-hint">Enter to send &middot; Shift + Enter for a new line</p>
-                </div>
-            </div>
+                <div class="chat-messages" id="chatMessages" aria-live="polite"><div class="chat-welcome" id="chatWelcome"><span class="folio">01</span><p>There is no such thing as a badly worded first question.</p><h2>What are you trying to understand?</h2></div></div>
+                <div class="upload-preview hidden" id="uploadPreview"><img id="uploadImage" alt="Selected mathematics problem"><div><strong>Problem image ready</strong><span id="uploadName"></span><small>The response will show its transcription first.</small></div><button id="removeUploadBtn" type="button" aria-label="Remove attached image">×</button></div>
+                <form class="chat-composer" id="chatForm">
+                    <label class="attach-control" for="askImage" title="Attach a photograph of a problem"><span>+</span><small>IMAGE</small><span class="sr-only">Attach an image</span></label>
+                    <input id="askImage" type="file" accept="image/*" hidden>
+                    <label class="sr-only" for="askInput">Your mathematics question</label>
+                    <textarea id="askInput" rows="1" placeholder="Write the question, the doubt, or the step that feels wrong..."></textarea>
+                    <button class="composer-send" type="submit" aria-label="Send question">Ask <span>↗</span></button>
+                </form>
+                <p class="composer-hint">Enter to ask · Shift + Enter for another line</p>
+            </section>
         </section>
     </main>
 
     <footer class="site-footer">
-        <div class="page-shell footer-inner">
-            <div><a class="footer-brand" href="#home" data-view-link="home">MathSphere</a><p>See mathematics. Understand it. Use it.</p></div>
-            <div class="footer-links"><a href="https://youtube.com/@pi_nomenal1729" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/pi_nomenal1729/reels" target="_blank" rel="noopener">Instagram</a><a href="https://www.linkedin.com/in/anupam-nigam-b2aa2b253" target="_blank" rel="noopener">LinkedIn</a></div>
-            <p class="footer-credit">ANUPAM | MATHSPHERE</p>
-        </div>
+        <div><a href="#home" data-view-link="home">MathSphere</a><p>Enter the mathematics.</p></div>
+        <p>Built as a teaching space by Anupam Nigam.</p>
+        <div class="footer-links"><a href="https://youtube.com/@pi_nomenal1729" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/pi_nomenal1729/reels" target="_blank" rel="noopener">Instagram</a><a href="https://www.linkedin.com/in/anupam-nigam-b2aa2b253" target="_blank" rel="noopener">LinkedIn</a></div>
     </footer>
 
+    <div class="cursor-point" id="cursorPoint" aria-hidden="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
     <script src="{{ url_for('static', filename='js/renderer.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

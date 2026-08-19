@@ -354,12 +354,23 @@ VERIFICATION: [show the check explicitly]
 
 CONFIDENCE: HIGH"""
 
-def verify_solution(question, solution):
+def verify_solution(question, solution, primary_source=None):
     verify_message = f"""ORIGINAL QUESTION:
 {question}
 
 PROPOSED SOLUTION TO CHECK — find every error:
 {solution}"""
+
+    # Prefer a different provider from the one that produced the solution.
+    # A second call to the same model is useful, but a cross-provider review is
+    # a more honest independent check when both services are available.
+    if primary_source and not primary_source.lower().startswith("groq"):
+        try:
+            print("[Verify] Trying cross-provider Groq review...")
+            result = ask_groq(verify_message, VERIFY_PROMPT)
+            return result, "Groq review"
+        except Exception as e:
+            print(f"[Verify] Groq review failed: {e}")
 
     for model_name, label in MATH_MODEL_CASCADE:
         try:
@@ -414,7 +425,9 @@ STEP 1 — READ THE IMAGE CAREFULLY:
 - State what you see: "I can see: [describe the content]" before solving.
 
 STEP 2 — TRANSCRIBE PRECISELY:
+Start a new section with the exact header TRANSCRIPTION:
 Write out the complete problem(s) in text form using proper math notation.
+If even one symbol, sign, exponent, limit, or diagram label is uncertain, write UNCERTAIN SYMBOL: and explain exactly what is ambiguous.
 Use $...$ for inline math. Never skip any part of the image.
 
 STEP 3 — SOLVE COMPLETELY:
@@ -424,7 +437,11 @@ Always end with VERIFICATION: showing you checked the answer.
 Always end with CONFIDENCE: HIGH / MEDIUM / LOW.
 """ + FORMAT_RULES
 
-IMAGE_IMO_PROMPT = IMO_PROMPT + "\nThe problem is in an image. Extract it first in one sentence, then solve."
+IMAGE_IMO_PROMPT = IMO_PROMPT + """
+The problem is in an image. Before solving, start with the exact header TRANSCRIPTION:
+Reproduce every visible symbol and condition. If any mark is ambiguous, add UNCERTAIN SYMBOL: and describe it.
+The student must be able to confirm your reading before trusting the proof.
+"""
 
 # ── MATHEMATICIAN PROMPT ───────────────────────────────────────
 MATHEMATICIAN_PROMPT = """You are MathSphere by Anupam Nigam.
@@ -1165,20 +1182,91 @@ HARD_PATTERNS = [
     r'\bgcd\b', r'\bnumber\s+theory\b', r'\bcombinatorics?\b',
     r'\bif\s+and\s+only\s+if\b', r'\blemma\b', r'\btheorem\b', r'\bcorollary\b',
 ]
+def _parse_math_expression(raw):
+    """Parse conservative plain-text/limited-LaTeX expressions for checking.
+
+    Returning None is intentional: MathSphere must never claim a symbolic
+    verification when the original problem or proposed answer was not parsed
+    unambiguously.
+    """
+    if not raw:
+        return None
+    try:
+        from sympy.parsing.sympy_parser import (
+            parse_expr, standard_transformations,
+            implicit_multiplication_application, convert_xor,
+        )
+        clean = str(raw).strip()
+        clean = clean.replace("$$", "").replace("$", "")
+        clean = clean.replace("\\left", "").replace("\\right", "")
+        clean = clean.replace("\\,", "").replace("\\!", "")
+        clean = clean.replace("−", "-").replace("×", "*").replace("÷", "/")
+        clean = re.sub(r"\\(sin|cos|tan|sec|csc|cot|log|ln|exp|sqrt)\b", r"\1", clean)
+        clean = clean.replace("\\cdot", "*").replace("\\times", "*")
+        clean = re.sub(r"\+\s*[Cc]\s*$", "", clean).strip()
+        if "=" in clean:
+            clean = clean.rsplit("=", 1)[-1].strip()
+        # Full TeX fractions require a LaTeX parser dependency. Decline the
+        # check rather than attempting an unsafe interpretation.
+        if "\\frac" in clean or "\\begin" in clean or "\\int" in clean:
+            return None
+        transformations = standard_transformations + (
+            implicit_multiplication_application,
+            convert_xor,
+        )
+        return parse_expr(clean, transformations=transformations, evaluate=True)
+    except Exception:
+        return None
+
+
+def _question_expression(question, operation):
+    plain = str(question).replace("\n", " ")
+    plain = re.sub(r"\[Difficulty:[^\]]+\]", "", plain, flags=re.IGNORECASE)
+    if operation == "integral":
+        patterns = [
+            r"(?:integrate|integral\s+of|antiderivative\s+of)\s+(.+?)(?:\s+d[xX]\b|[?.]|$)",
+            r"∫\s*(.+?)\s*d[xX]\b",
+        ]
+    else:
+        patterns = [
+            r"(?:differentiate|derivative\s+of)\s+(.+?)(?:\s+with\s+respect\s+to\s+x|[?.]|$)",
+            r"d/dx\s*(?:of\s*)?(.+?)(?:[?.]|$)",
+        ]
+    for pattern in patterns:
+        match = re.search(pattern, plain, re.IGNORECASE)
+        if match:
+            return _parse_math_expression(match.group(1))
+    return None
+
+
 def sympy_verify(question, ai_answer):
     if not SYMPY_AVAILABLE:
         return None, None
     try:
-        x = sp.Symbol('x')
+        x = sp.Symbol("x")
         q = question.lower()
-        if any(w in q for w in ['integrate', 'integral', 'antiderivative']):
-            clean = ai_answer.strip().replace('+ C', '').replace('+C', '').strip()
-            expr = sp.sympify(clean)
-            diff = sp.diff(expr, x)
-            return True, f"SymPy: d/dx({sp.simplify(expr)}) computed ✓"
-        if any(w in q for w in ['derivative', 'differentiate', 'd/dx']):
-            expr = sp.sympify(ai_answer.strip())
-            return True, "SymPy: derivative expression validated ✓"
+        answer_expr = _parse_math_expression(ai_answer)
+        if answer_expr is None:
+            return None, None
+
+        if any(w in q for w in ["integrate", "integral", "antiderivative", "∫"]):
+            original_expr = _question_expression(question, "integral")
+            if original_expr is None:
+                return None, None
+            difference = sp.simplify(sp.diff(answer_expr, x) - original_expr)
+            if difference == 0:
+                return True, "Differentiating the final answer reproduces the original integrand exactly."
+            return False, f"Symbolic mismatch after differentiation: {difference}"
+
+        if any(w in q for w in ["derivative", "differentiate", "d/dx"]):
+            original_expr = _question_expression(question, "derivative")
+            if original_expr is None:
+                return None, None
+            difference = sp.simplify(answer_expr - sp.diff(original_expr, x))
+            if difference == 0:
+                return True, "The final derivative matches an independent symbolic differentiation."
+            return False, f"Symbolic derivative mismatch: {difference}"
+
         return None, None
     except Exception:
         return None, None
@@ -1255,6 +1343,57 @@ def ask_gemini_model(message, system_prompt, model_name, image_data=None, chat_h
         resp = client.models.generate_content(model=model_name, contents=full_prompt)
     return resp.text
 
+
+def _extract_final_answer(solution):
+    matches = re.findall(r"FINAL ANSWER[:\s]*\$\$(.+?)\$\$", solution or "", re.DOTALL | re.IGNORECASE)
+    return matches[-1].strip() if matches else None
+
+
+def finalise_math_response(question, solution, source_label, force_review=False):
+    """Apply honest post-solution checks without overstating certainty."""
+    final_text = solution
+    reviewed = False
+    corrected = False
+
+    if force_review or should_verify(question, "math"):
+        print("[Math] Running independent second-pass review...")
+        review, review_label = verify_solution(question, final_text, source_label)
+        if review and "ERROR FOUND" in review:
+            final_text = review
+            corrected = True
+            reviewed = True
+            source_label = f"{review_label or 'Independent review'} · corrected"
+        elif review and "VERIFIED" in review:
+            reviewed = True
+
+    symbolic_status = None
+    symbolic_note = None
+    final_answer = _extract_final_answer(final_text)
+    if final_answer:
+        symbolic_status, symbolic_note = sympy_verify(question, final_answer)
+
+    if symbolic_status is True:
+        status = "SYMBOLICALLY VERIFIED"
+        detail = symbolic_note
+        source_label = f"{source_label} · symbolic check"
+    elif symbolic_status is False:
+        status = "NEEDS HUMAN VERIFICATION"
+        detail = "The deterministic symbolic check found a mismatch. Review the transcription and working before relying on this answer."
+        source_label = f"{source_label} · symbolic mismatch"
+    elif reviewed:
+        status = "INDEPENDENTLY AI-REVIEWED"
+        detail = ("A separate reviewer found and corrected the initial solution."
+                  if corrected else
+                  "A separate model reviewed the reasoning and did not identify an error. This is not a formal proof of correctness.")
+        source_label = f"{source_label} · independent review"
+    else:
+        status = "NEEDS HUMAN VERIFICATION"
+        detail = "No deterministic or independent check was available for this response."
+        source_label = f"{source_label} · unverified"
+
+    final_text += f"\n\nVERIFICATION STATUS:\n{status} — {detail}"
+    return final_text, source_label
+
 # ── MAIN RESPONSE ROUTER ───────────────────────────────────────
 def get_response(message, mode="math", image_data=None, chat_history=None):
 
@@ -1302,29 +1441,21 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                 print(f"[Image] Trying {model_name}...")
                 text = ask_gemini_model(message, img_prompt, model_name,
                                         image_data=image_data, chat_history=chat_history)
-                return text, label
+                text += ("\n\nVERIFICATION STATUS:\nTRANSCRIPTION REQUIRES CONFIRMATION — "
+                         "Check the transcription against the image before relying on the solution.")
+                return text, f"{label} · image transcription unconfirmed"
             except Exception as e:
                 print(f"[Image] {model_name} failed: {e}")
                 time.sleep(0.1)
-        try:
-            return ask_groq(
-                f"Student sent image with question: {message}. Solve step by step with verification.",
-                IMAGE_MATH_PROMPT, chat_history
-            ), "Groq"
-        except Exception as e:
-            print(f"[Image] Groq failed: {e}")
+        # Groq receives text only in this application and cannot inspect the
+        # uploaded pixels. Falling back to it would create a plausible-looking
+        # answer to a problem it never actually saw.
         return "Could not analyse the image. Please try again.", "None"
 
     # ── Math mode ──────────────────────────────────────────────
     if mode == "math":
         topic_verify    = get_topic_verification(message)
         enhanced_prompt = MATH_PROMPT + "\n" + topic_verify
-
-        try:
-            print("[Math] Trying Groq first...")
-            return ask_groq(message, enhanced_prompt, chat_history), "Groq"
-        except Exception as e:
-            print(f"[Math] Groq failed: {e}")
 
         if is_hard_problem(message):
             hard_prompt = IMO_PROMPT + "\n" + topic_verify
@@ -1333,59 +1464,35 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
                     print(f"[Hard] Trying {model_name}...")
                     text = ask_gemini_model(message, hard_prompt,
                                            model_name, chat_history=chat_history)
-                    print("[Hard] Running 2nd-pass verification...")
-                    verified, v_label = verify_solution(message, text)
-                    if verified:
-                        if "ERROR FOUND" in verified:
-                            print("[Hard] Verifier found error — using corrected solution")
-                            return (verified + "\n\n⚠ Note: An error was found in the initial solution and "
-                                    "has been automatically corrected above."), f"{v_label} ✓✓ Auto-Corrected"
-                        else:
-                            return (text + "\n\n✓ This solution was independently verified by a second "
-                                    "AI check and confirmed correct."), f"{label} ✓✓ Verified"
-                    return text, label
+                    return finalise_math_response(message, text, label, force_review=True)
                 except Exception as e:
                     print(f"[Hard] {model_name} failed: {e}")
                     time.sleep(0.1)
             try:
-                return ask_groq(message, IMO_PROMPT, chat_history), "Groq"
+                print("[Hard] Trying Groq fallback...")
+                text = ask_groq(message, hard_prompt, chat_history)
+                return finalise_math_response(message, text, "Groq", force_review=True)
             except Exception as e:
                 print(f"[Hard] Groq also failed: {e}")
             return "All AI services are currently unavailable. Please try again shortly.", "None"
+
+        try:
+            print("[Math] Trying Groq first...")
+            text = ask_groq(message, enhanced_prompt, chat_history)
+            return finalise_math_response(message, text, "Groq")
+        except Exception as e:
+            print(f"[Math] Groq failed: {e}")
 
         for model_name, label in MATH_MODEL_CASCADE:
             try:
                 print(f"[Math] Trying {model_name}...")
                 text = ask_gemini_model(message, enhanced_prompt,
                                        model_name, chat_history=chat_history)
-                if should_verify(message, mode):
-                    print("[Math] Running 2nd-pass verification...")
-                    verified, v_label = verify_solution(message, text)
-                    if verified:
-                        if "ERROR FOUND" in verified:
-                            print("[Math] Error found — using corrected solution")
-                            return (verified + "\n\n⚠ Note: An error was found in the initial solution and "
-                                    "has been automatically corrected above."), f"{v_label} ✓✓ Auto-Corrected"
-                        else:
-                            return (text + "\n\n✓ This solution was independently verified by a second "
-                                    "AI check and confirmed correct."), f"{label} ✓✓ Verified"
-                # SymPy cross-check
-                if SYMPY_AVAILABLE:
-                    final_match = re.search(r'FINAL ANSWER[:\s]*\$\$(.+?)\$\$', text, re.DOTALL)
-                    if final_match:
-                        _, note = sympy_verify(message, final_match.group(1))
-                        if note:
-                            text += f"\n\nSYMPY CHECK: {note}"
-                return text, label
+                return finalise_math_response(message, text, label)
 
             except Exception as e:
                 print(f"[Math] {model_name} failed: {e}")
                 time.sleep(0.1)
-
-        try:
-            return ask_groq(message, enhanced_prompt, chat_history), "Groq"
-        except Exception as e:
-            print(f"[Math] Groq fallback failed: {e}")
         return "All AI services are currently unavailable. Please try again shortly.", "None"
 
     # ── All other modes ────────────────────────────────────────

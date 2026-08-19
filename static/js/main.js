@@ -7,7 +7,8 @@
         chatHistory: [],
         currentPractice: "",
         heroFrame: null,
-        toastTimer: null
+        toastTimer: null,
+        pointer: { x: 0, y: 0 }
     };
 
     const $ = (selector, root) => (root || document).querySelector(selector);
@@ -34,7 +35,11 @@
         const nav = $("#mainNav");
         const toggle = $("#menuToggle");
         if (nav) nav.classList.remove("open");
-        if (toggle) toggle.setAttribute("aria-expanded", "false");
+        if (toggle) {
+            toggle.setAttribute("aria-expanded", "false");
+            $("span", toggle).textContent = "Navigate";
+        }
+        document.body.classList.remove("menu-open");
     }
 
     function navigate(view, pushHistory) {
@@ -42,6 +47,7 @@
         if (!target) return;
 
         state.currentView = view;
+        document.body.dataset.view = view;
         $$(".view").forEach(section => section.classList.toggle("active", section === target));
         $$(".main-nav [data-view]").forEach(button => {
             button.classList.toggle("active", button.dataset.view === view);
@@ -120,6 +126,28 @@
         } else if (window.MathJax && window.MathJax.typesetPromise) {
             window.MathJax.typesetPromise([element]).catch(() => {});
         }
+
+        if (element.closest(".message.assistant")) {
+            enhanceReasoningSteps(element);
+        }
+    }
+
+    function enhanceReasoningSteps(element) {
+        const candidates = $$(".vr-step-card, .vr-formula-box", element).slice(0, 6);
+        candidates.forEach(block => {
+            if ($(".why-step", block)) return;
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "why-step";
+            button.textContent = "Why is this step valid?";
+            button.addEventListener("click", () => {
+                const context = block.textContent.replace(button.textContent, "").trim().slice(0, 500);
+                $("#askInput").value = "In the previous solution, why is this step valid?\n" + context;
+                autoResize($("#askInput"));
+                $("#askInput").focus();
+            });
+            block.appendChild(button);
+        });
     }
 
     function renderError(element, error) {
@@ -156,6 +184,7 @@
         result.classList.add("loading");
         result.innerHTML = thinkingHTML("Building your lesson");
         setButtonLoading(button, true, "Building...");
+        $$(".proof-thread span").forEach((step, index) => step.classList.toggle("active", index === 0));
 
         const prompt =
             "Teach me " + topic + ". Begin with why the idea was needed, build the intuition, " +
@@ -165,6 +194,7 @@
             const data = await callMathSphere(prompt, mode);
             result.classList.remove("loading");
             renderInto(result, data.response);
+            $$(".proof-thread span").forEach(step => step.classList.add("active"));
         } catch (error) {
             result.classList.remove("loading");
             renderError(result, error);
@@ -313,7 +343,10 @@
         }
 
         const displayMessage = message || "Please solve the problem in this image.";
-        const requestMessage = "[Difficulty: " + level + "]\n" + displayMessage;
+        const transcriptionInstruction = image
+            ? "Begin with TRANSCRIPTION: and reproduce exactly what you read from the image before solving. If any symbol is uncertain, state that uncertainty.\n"
+            : "";
+        const requestMessage = "[Difficulty: " + level + "]\n" + transcriptionInstruction + displayMessage;
         const previousHistory = state.chatHistory.slice(-8);
 
         appendUserMessage(displayMessage, Boolean(image));
@@ -346,9 +379,9 @@
         state.chatHistory = [];
         clearUpload();
         $("#chatMessages").innerHTML =
-            '<div class="chat-welcome" id="chatWelcome"><span class="empty-symbol">&Sigma;</span>' +
-            "<h2>What are you thinking about?</h2>" +
-            "<p>Ask freely. A good mathematical question does not need to be perfectly worded.</p></div>";
+            '<div class="chat-welcome" id="chatWelcome"><span class="folio">01</span>' +
+            "<p>There is no such thing as a badly worded first question.</p>" +
+            "<h2>What are you trying to understand?</h2></div>";
     }
 
     function clearUpload() {
@@ -453,7 +486,7 @@
         ctx.closePath();
         ctx.fill();
         if (label) {
-            ctx.font = '600 13px "DM Sans", sans-serif';
+            ctx.font = '500 12px "DM Mono", monospace';
             ctx.fillText(label, x2 + 9 * Math.cos(angle - Math.PI / 2), y2 + 9 * Math.sin(angle - Math.PI / 2));
         }
         ctx.restore();
@@ -464,30 +497,72 @@
         const prepared = prepareCanvas(canvas);
         if (!prepared) return;
         const { ctx, width, height } = prepared;
-        const originX = width * .38;
-        const originY = height * .62;
-        const motion = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : Math.sin((time || 0) / 1700) * .12;
-        const a = { x: width * (.26 + motion * .04), y: -height * .18 };
-        const b = { x: -width * .13, y: -height * (.29 + motion * .03) };
-        const result = { x: 2 * a.x + b.x, y: 2 * a.y + b.y };
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const clock = reduced ? 0 : (time || 0) * .00012;
+        const cx = width * .5;
+        const cy = height * .46;
+        const radius = Math.min(width, height) * (width < 700 ? .25 : .27);
+        const yaw = clock + state.pointer.x * .22;
+        const pitch = -.24 + state.pointer.y * .16;
 
-        drawGrid(ctx, width, height, originX, originY, 32, "rgba(255,255,255,.055)");
-        drawArrow(ctx, originX, originY, originX + a.x, originY + a.y, "#6bd7bf", 2.5, "a");
-        drawArrow(ctx, originX, originY, originX + b.x, originY + b.y, "#8fb5ea", 2.5, "b");
-        drawArrow(ctx, originX, originY, originX + result.x, originY + result.y, "#f2ece0", 3.5, "2a + b");
+        function project(latitude, longitude) {
+            const x = Math.cos(latitude) * Math.cos(longitude);
+            const y = Math.sin(latitude);
+            const z = Math.cos(latitude) * Math.sin(longitude);
+            const x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+            const z1 = x * Math.sin(yaw) + z * Math.cos(yaw);
+            const y1 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+            const z2 = y * Math.sin(pitch) + z1 * Math.cos(pitch);
+            return { x: cx + x1 * radius, y: cy - y1 * radius, z: z2 };
+        }
+
+        function drawCurve(points, rgb) {
+            for (let front = 0; front < 2; front++) {
+                ctx.beginPath();
+                let drawing = false;
+                points.forEach(point => {
+                    const visible = front ? point.z >= 0 : point.z < 0;
+                    if (!visible) {
+                        drawing = false;
+                        return;
+                    }
+                    if (!drawing) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                    drawing = true;
+                });
+                ctx.strokeStyle = "rgba(" + rgb + "," + (front ? .34 : .075) + ")";
+                ctx.lineWidth = front ? 1 : .7;
+                ctx.stroke();
+            }
+        }
 
         ctx.save();
-        ctx.setLineDash([5, 6]);
-        ctx.strokeStyle = "rgba(255,255,255,.2)";
-        ctx.beginPath();
-        ctx.moveTo(originX + 2 * a.x, originY + 2 * a.y);
-        ctx.lineTo(originX + result.x, originY + result.y);
-        ctx.moveTo(originX + b.x, originY + b.y);
-        ctx.lineTo(originX + result.x, originY + result.y);
-        ctx.stroke();
+        ctx.shadowBlur = 22;
+        ctx.shadowColor = "rgba(99,230,204,.16)";
+        for (let i = -4; i <= 4; i++) {
+            const points = [];
+            const latitude = i * Math.PI / 12;
+            for (let n = 0; n <= 96; n++) points.push(project(latitude, n / 96 * Math.PI * 2));
+            drawCurve(points, "99,230,204");
+        }
+        for (let i = 0; i < 12; i++) {
+            const points = [];
+            const longitude = i / 12 * Math.PI * 2;
+            for (let n = -48; n <= 48; n++) points.push(project(n / 48 * Math.PI / 2, longitude));
+            drawCurve(points, "110,139,255");
+        }
         ctx.restore();
 
-        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && state.currentView === "home") {
+        const orbit = project(.24, 1.2 + clock * 4);
+        ctx.beginPath();
+        ctx.arc(orbit.x, orbit.y, orbit.z > 0 ? 3.2 : 1.7, 0, Math.PI * 2);
+        ctx.fillStyle = orbit.z > 0 ? "#ffb45a" : "rgba(255,180,90,.25)";
+        ctx.shadowBlur = orbit.z > 0 ? 16 : 0;
+        ctx.shadowColor = "#ffb45a";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        if (!reduced && state.currentView === "home") {
             state.heroFrame = requestAnimationFrame(drawHero);
         }
     }
@@ -615,6 +690,8 @@
             const open = !nav.classList.contains("open");
             nav.classList.toggle("open", open);
             $("#menuToggle").setAttribute("aria-expanded", String(open));
+            $("#menuToggle span").textContent = open ? "Close" : "Navigate";
+            document.body.classList.toggle("menu-open", open);
         });
 
         $("#heroAskForm").addEventListener("submit", event => {
@@ -679,6 +756,26 @@
         $("#askImage").addEventListener("change", event => handleUpload(event.target.files[0]));
         $("#removeUploadBtn").addEventListener("click", clearUpload);
         $("#clearChatBtn").addEventListener("click", clearChat);
+
+        const cursor = $("#cursorPoint");
+        window.addEventListener("pointermove", event => {
+            state.pointer.x = event.clientX / Math.max(window.innerWidth, 1) * 2 - 1;
+            state.pointer.y = event.clientY / Math.max(window.innerHeight, 1) * 2 - 1;
+            if (cursor && event.pointerType !== "touch") {
+                cursor.style.left = event.clientX + "px";
+                cursor.style.top = event.clientY + "px";
+                cursor.classList.add("visible");
+            }
+        }, { passive: true });
+        document.addEventListener("pointerover", event => {
+            if (cursor && event.target.closest("button, a, input, textarea, select")) cursor.classList.add("active");
+        });
+        document.addEventListener("pointerout", event => {
+            if (cursor && event.target.closest("button, a, input, textarea, select")) cursor.classList.remove("active");
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") closeMenu();
+        });
 
         window.addEventListener("scroll", () => $("#siteHeader").classList.toggle("scrolled", window.scrollY > 10), { passive: true });
         window.addEventListener("popstate", () => {

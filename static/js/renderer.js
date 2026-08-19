@@ -191,7 +191,7 @@ function linkify(text) {
             var display = clean.length > 60 ? clean.substring(0, 57) + '...' : clean;
             return '<a href="' + url +
                 '" target="_blank" rel="noopener" class="vr-resource-link">' +
-                '<span>🔗</span> ' + display + '</a>';
+                display + ' ↗</a>';
         }
     );
 }
@@ -211,19 +211,19 @@ function renderErrorMessage(text) {
     var t = text.toLowerCase();
     if (t.includes('rate limit') || t.includes('429')) {
         return '<div class="error-bubble rate-limit-error">' +
-            '<div class="error-title">⏳ Rate Limit Reached</div>' +
+            '<div class="error-title">Rate limit reached</div>' +
             '<div class="error-body">You are sending messages too quickly. ' +
             'Please wait a moment and try again.</div></div>';
     }
     if (t.includes('quota') || t.includes('all ai services')) {
         return '<div class="error-bubble quota-error">' +
-            '<div class="error-title">⚠ Service Temporarily Unavailable</div>' +
+            '<div class="error-title">Service temporarily unavailable</div>' +
             '<div class="error-body">' + escLabel(text) + '</div>' +
             '<div class="error-fix">The free API quota may be exhausted. ' +
             'Please try again later.</div></div>';
     }
     return '<div class="error-bubble">' +
-        '<div class="error-title">⚠ Error</div>' +
+        '<div class="error-title">Error</div>' +
         '<div class="error-body">' + escLabel(text) + '</div></div>';
 }
 
@@ -243,7 +243,7 @@ function resourceLink(url) {
     var clean = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
     return '<a href="' + url +
         '" target="_blank" rel="noopener" class="vr-resource-link">' +
-        '<span>🔗</span> ' + clean + '</a>';
+        clean + ' ↗</a>';
 }
 
 // ── CAREER CARD ────────────────────────────────────────────────
