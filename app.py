@@ -953,6 +953,28 @@ WHAT TO REMEMBER:
 CONFIDENCE: HIGH / MEDIUM / LOW
 """ + FORMAT_RULES
 
+# ── FOCUSED PRACTICE QUESTION PROMPT ─────────────────────────
+PRACTICE_QUESTION_PROMPT = """You are MathSphere's focused practice-question designer by Anupam Nigam.
+
+Create exactly ONE standalone mathematics question at the requested topic, level, and focus.
+
+STRICT RULES:
+- Return only the question the student should attempt.
+- Do not include a solution, answer, hint, method, marking scheme, or explanation.
+- Include every assumption, value, definition, and condition needed to solve it.
+- Use clear mathematical notation. Put important equations on their own lines as $$...$$.
+- Match the requested level honestly; do not make a foundation question artificially complicated.
+- Prefer a question that tests understanding, not merely repetitive arithmetic.
+
+Use this compact format:
+
+QUESTION:
+[The complete question]
+
+TOPIC: [specific topic]
+DIFFICULTY: [Foundation / Undergraduate / GATE-JAM / Olympiad]
+"""
+
 # ── FORMULA SHEET PROMPT ───────────────────────────────────────
 FORMULA_SHEET_PROMPT = """You are MathSphere's Formula Sheet Generator by Anupam Nigam.
 Generate a complete exam-ready formula sheet for the requested topic.
@@ -1253,6 +1275,7 @@ def get_response(message, mode="math", image_data=None, chat_history=None):
         "pyq":            PYQ_PROMPT,
         "wrong":          WRONG_PROMPT,
         "checker":        CHECKER_PROMPT,
+        "practice_question": PRACTICE_QUESTION_PROMPT,
         "formula_sheet":  FORMULA_SHEET_PROMPT,
         "mock_test":      MOCK_TEST_PROMPT,
         "eli10":          ELI10_PROMPT,
